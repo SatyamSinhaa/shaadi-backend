@@ -29,6 +29,8 @@ public class ChatController {
             return ResponseEntity.ok(savedMessage);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(null); // Forbidden for no active subscription
         }
     }
 
