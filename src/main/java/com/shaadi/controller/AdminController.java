@@ -18,6 +18,7 @@ import com.shaadi.dto.AdminGiveSubscriptionDto;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin")
@@ -55,10 +56,17 @@ public class AdminController {
 
     @GetMapping("/users/{id}")
     @ResponseBody
-    public ResponseEntity<User> getUserById(@PathVariable Integer id) {
-        return userService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> getUserById(@PathVariable Integer id) {
+        try {
+            Optional<User> userOpt = userService.findById(id);
+            if (userOpt.isPresent()) {
+                return ResponseEntity.ok(userOpt.get());
+            } else {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while retrieving the user"));
+        }
     }
 
     @GetMapping("/users/{id}/edit")
@@ -69,9 +77,14 @@ public class AdminController {
 
     @PostMapping("/users/{id}")
     public String updateUser(@PathVariable Integer id, @ModelAttribute User user) {
-        user.setId(id);
-        userService.updateUser(user);
-        return "redirect:/admin/users";
+        try {
+            user.setId(id);
+            userService.updateUser(user);
+            return "redirect:/admin/users";
+        } catch (Exception e) {
+            // For view-based endpoints, we can't return JSON, so redirect with error param or handle differently
+            return "redirect:/admin/users?error=" + e.getMessage();
+        }
     }
 
     @PostMapping("/users/{id}/delete")
@@ -102,21 +115,29 @@ public class AdminController {
     // API endpoints for JSON responses (optional)
     @GetMapping("/api/users")
     @ResponseBody
-    public List<User> getAllUsersApi() {
-        return userService.findAll();
+    public ResponseEntity<List<User>> getAllUsersApi() {
+        try {
+            return ResponseEntity.ok(userService.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(List.of());
+        }
     }
 
     @GetMapping("/api/stats")
     @ResponseBody
-    public Map<String, Object> getStatsApi() {
-        long totalUsers = userService.findAll().size();
-        long totalAdmins = userService.findAll().stream().filter(u -> u.getRole() == Role.ADMIN).count();
-        long totalSubscriptions = subscriptionService.findAll().size();
-        return Map.of(
-            "totalUsers", totalUsers,
-            "totalAdmins", totalAdmins,
-            "totalSubscriptions", totalSubscriptions
-        );
+    public ResponseEntity<Map<String, Object>> getStatsApi() {
+        try {
+            long totalUsers = userService.findAll().size();
+            long totalAdmins = userService.findAll().stream().filter(u -> u.getRole() == Role.ADMIN).count();
+            long totalSubscriptions = subscriptionService.findAll().size();
+            return ResponseEntity.ok(Map.of(
+                "totalUsers", totalUsers,
+                "totalAdmins", totalAdmins,
+                "totalSubscriptions", totalSubscriptions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while retrieving stats"));
+        }
     }
 
     // Freebie management endpoints
@@ -159,46 +180,12 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/api/users/{id}/reset-freebies")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> resetUserFreebies(@PathVariable Integer id, @RequestBody Map<String, Integer> payload) {
-        try {
-            User user = userService.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-            Integer freeChatLimit = payload.get("freeChatLimit");
-            if (freeChatLimit == null || freeChatLimit < 0) {
-                freeChatLimit = 2; // Default
-            }
-
-            user.setFreeChatLimit(freeChatLimit);
-            userService.updateUser(user);
-
-            Map<String, Object> response = Map.of(
-                "success", true,
-                "message", "User freebies reset successfully",
-                "newFreeChatLimit", freeChatLimit
-            );
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, Object> response = Map.of(
-                "success", false,
-                "message", e.getMessage()
-            );
-            return ResponseEntity.badRequest().body(response);
-        } catch (Exception e) {
-            Map<String, Object> response = Map.of(
-                "success", false,
-                "message", "An error occurred while resetting user freebies"
-            );
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
+    // Note: reset-freebies endpoint removed as freeChatLimit is no longer in User entity
 
     // Admin chat endpoints
     @PostMapping("/api/chat/send")
     @ResponseBody
-    public ResponseEntity<Message> sendMessageToUser(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> sendMessageToUser(@RequestBody Map<String, Object> payload) {
         try {
             Integer receiverId = (Integer) payload.get("receiverId");
             String content = (String) payload.get("content");
@@ -220,17 +207,25 @@ public class AdminController {
             Message savedMessage = chatService.sendMessageAsAdmin(message);
             return ResponseEntity.ok(savedMessage);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while sending the message"));
         }
     }
 
     @GetMapping("/api/chat/messages/{userId}")
     @ResponseBody
-    public ResponseEntity<List<Message>> getMessagesForUser(@PathVariable Integer userId) {
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        List<Message> messages = chatService.getMessagesForUser(user);
-        return ResponseEntity.ok(messages);
+    public ResponseEntity<?> getMessagesForUser(@PathVariable Integer userId) {
+        try {
+            User user = userService.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            List<Message> messages = chatService.getMessagesForUser(user);
+            return ResponseEntity.ok(messages);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while retrieving messages"));
+        }
     }
 
     // Admin plan management endpoints
@@ -248,8 +243,12 @@ public class AdminController {
 
     @PostMapping("/plans")
     public String createPlan(@ModelAttribute Plan plan) {
-        planService.savePlan(plan);
-        return "redirect:/admin/plans";
+        try {
+            planService.savePlan(plan);
+            return "redirect:/admin/plans";
+        } catch (Exception e) {
+            return "redirect:/admin/plans?error=" + e.getMessage();
+        }
     }
 
     @GetMapping("/plans/{id}/edit")
@@ -260,9 +259,13 @@ public class AdminController {
 
     @PostMapping("/plans/{id}")
     public String updatePlan(@PathVariable Integer id, @ModelAttribute Plan plan) {
-        plan.setId(id);
-        planService.savePlan(plan);
-        return "redirect:/admin/plans";
+        try {
+            plan.setId(id);
+            planService.savePlan(plan);
+            return "redirect:/admin/plans";
+        } catch (Exception e) {
+            return "redirect:/admin/plans?error=" + e.getMessage();
+        }
     }
 
     @PostMapping("/plans/{id}/delete")
@@ -284,26 +287,29 @@ public class AdminController {
         }
     }
 
-    // API endpoints for plan management
-    @GetMapping("/api/plans")
-    @ResponseBody
-    public List<Plan> getAllPlansApi() {
-        return planService.getAllPlans();
-    }
+
 
     @PostMapping("/api/plans")
     @ResponseBody
-    public ResponseEntity<Plan> createPlanApi(@RequestBody Plan plan) {
-        Plan savedPlan = planService.savePlan(plan);
-        return ResponseEntity.ok(savedPlan);
+    public ResponseEntity<?> createPlanApi(@RequestBody Plan plan) {
+        try {
+            Plan savedPlan = planService.savePlan(plan);
+            return ResponseEntity.ok(savedPlan);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while creating the plan"));
+        }
     }
 
     @PutMapping("/api/plans/{id}")
     @ResponseBody
-    public ResponseEntity<Plan> updatePlanApi(@PathVariable Integer id, @RequestBody Plan plan) {
-        plan.setId(id);
-        Plan updatedPlan = planService.savePlan(plan);
-        return ResponseEntity.ok(updatedPlan);
+    public ResponseEntity<?> updatePlanApi(@PathVariable Integer id, @RequestBody Plan plan) {
+        try {
+            plan.setId(id);
+            Plan updatedPlan = planService.savePlan(plan);
+            return ResponseEntity.ok(updatedPlan);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while updating the plan"));
+        }
     }
 
     @DeleteMapping("/api/plans/{id}")

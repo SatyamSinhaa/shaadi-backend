@@ -1,12 +1,7 @@
-# TODO: Add Admin Functionality for Free Subscription Management
+# TODO: Update all Controllers to use ResponseEntity and return proper error messages
 
-## Overview
-Implement admin endpoints to allow admins to give or take subscriptions freely to/from any user.
-
-## Steps
-- [x] Create DTO for give subscription request (AdminGiveSubscriptionDto)
-- [x] Add giveSubscription method in SubscriptionService
-- [x] Add revokeSubscription method in SubscriptionService
-- [x] Add give subscription endpoint in AdminController
-- [x] Add revoke subscription endpoint in AdminController
-- [x] Test the new endpoints
+- [x] Update UserController endpoints to use ResponseEntity and return error messages
+- [x] Update AdminController endpoints to use ResponseEntity and return error messages
+- [x] Update ChatController endpoints to use ResponseEntity and return error messages
+- [x] Update PlanController endpoints to use ResponseEntity and return error messages
+- [x] Test all endpoints to verify error messages are returned properly

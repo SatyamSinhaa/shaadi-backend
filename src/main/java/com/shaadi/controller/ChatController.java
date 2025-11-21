@@ -23,40 +23,56 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<?> sendMessage(@RequestBody Message message) {
         try {
             Message savedMessage = chatService.sendMessage(message);
             return ResponseEntity.ok(savedMessage);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(403).body(null); // Forbidden for no active subscription
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage())); // Forbidden for no active subscription
         }
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<Message>> getMessages(@PathVariable int userId) {
-        Optional<User> userOpt = userRepo.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> getMessages(@PathVariable int userId) {
+        try {
+            Optional<User> userOpt = userRepo.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            List<Message> messages = chatService.getMessagesForUser(userOpt.get());
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while retrieving messages"));
         }
-        List<Message> messages = chatService.getMessagesForUser(userOpt.get());
-        return ResponseEntity.ok(messages);
     }
 
     @GetMapping("/message/{id}")
-    public ResponseEntity<Message> getMessageById(@PathVariable int id) {
-        Optional<Message> messageOpt = chatService.findById(id);
-        return messageOpt.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> getMessageById(@PathVariable int id) {
+        try {
+            Optional<Message> messageOpt = chatService.findById(id);
+            if (messageOpt.isPresent()) {
+                return ResponseEntity.ok(messageOpt.get());
+            } else {
+                return ResponseEntity.status(404).body(Map.of("error", "Message not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while retrieving the message"));
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable int id) {
-        Optional<Message> messageOpt = chatService.findById(id);
-        if (messageOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> deleteMessage(@PathVariable int id) {
+        try {
+            Optional<Message> messageOpt = chatService.findById(id);
+            if (messageOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Message not found"));
+            }
+            chatService.deleteMessage(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while deleting the message"));
         }
-        chatService.deleteMessage(id);
-        return ResponseEntity.noContent().build();
     }
 }

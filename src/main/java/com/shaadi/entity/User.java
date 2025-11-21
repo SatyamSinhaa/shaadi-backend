@@ -19,21 +19,28 @@ public class User {
     @JsonIgnore
     private String password;
 
+    // Profile fields (nullable for admins)
+    private Integer age;
+    private String gender;
+    private String gotr;
+    private String caste;
+    private String category;
+    private String religion;
+    private String cityTown;
+    private String district;
+    private String state;
+    private String bio;
+    private String photoUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
 
-    // Profile fields (nullable for admins)
-    private Integer age;
-    private String gender;
-    private String religion;
-    private String location;
-    private String bio;
-    private String photoUrl;
+    // Photo gallery
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Photo> photos;
 
-    // Freebie chat limit for new users
-    @Column(name = "free_chat_limit", nullable = false)
-    private Integer freeChatLimit = 2; // Default 2, configurable by admin
+
 
     // Subscription relationship
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

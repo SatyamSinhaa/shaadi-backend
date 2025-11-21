@@ -11,6 +11,7 @@ import com.shaadi.entity.Plan;
 import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
 import com.shaadi.repository.PlanRepository;
+import com.shaadi.repository.PhotoRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,11 +23,13 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepo;
     private final UserRepository userRepo;
     private final PlanRepository planRepo;
+    private final PhotoRepository photoRepo;
 
-    public SubscriptionService(SubscriptionRepository subscriptionRepo, UserRepository userRepo, PlanRepository planRepo) {
+    public SubscriptionService(SubscriptionRepository subscriptionRepo, UserRepository userRepo, PlanRepository planRepo, PhotoRepository photoRepo) {
         this.subscriptionRepo = subscriptionRepo;
         this.userRepo = userRepo;
         this.planRepo = planRepo;
+        this.photoRepo = photoRepo;
     }
 
     // Method to update expired subscriptions
@@ -35,6 +38,8 @@ public class SubscriptionService {
         for (Subscription sub : expiredSubs) {
             sub.setStatus(SubscriptionStatus.EXPIRED);
             subscriptionRepo.save(sub);
+            // Remove excess photos when subscription expires
+            removeExcessPhotos(sub.getUser());
         }
     }
 
@@ -86,6 +91,19 @@ public class SubscriptionService {
         for (Subscription sub : activeSubscriptions) {
             sub.setStatus(SubscriptionStatus.EXPIRED);
             subscriptionRepo.save(sub);
+            // Remove excess photos when subscription is revoked
+            removeExcessPhotos(user);
+        }
+    }
+
+    private void removeExcessPhotos(User user) {
+        List<com.shaadi.entity.Photo> photos = photoRepo.findByUser(user);
+        int maxPhotos = 1; // Default for non-subscribers
+        if (photos.size() > maxPhotos) {
+            // Remove excess photos, keeping only the first one
+            for (int i = maxPhotos; i < photos.size(); i++) {
+                photoRepo.delete(photos.get(i));
+            }
         }
     }
 }

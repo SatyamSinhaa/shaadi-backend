@@ -32,4 +32,6 @@ public class Subscription {
 
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
+
+    private Integer chatLimit; // Total chat limit for this subscription
 }

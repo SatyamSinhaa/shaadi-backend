@@ -45,31 +45,35 @@ public class ChatService {
         // Check if sender has an active subscription
         Optional<Subscription> activeSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(sender, SubscriptionStatus.ACTIVE);
         if (activeSub.isEmpty() || activeSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Active subscription required to chat");
-        }
-
-        // Check chat limit for sender's plan or free chat limit
-        Integer chatLimit = activeSub.get().getPlan().getChatLimit();
-        if (chatLimit != null) {
+            // No active subscription, check free chat limit
             List<Integer> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
-            if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
-                // Check if user has free chat limit available
-                if (sender.getFreeChatLimit() > 0) {
-                    // Use free chat limit
+            if (!chatPartnerIds.contains(receiver.getId())) {
+                // Trying to start a new chat
+                if (sender.getFreeChatLimit() <= 0) {
+                    throw new IllegalStateException("Free chat limit reached. Subscribe to chat with more users.");
+                } else {
+                    // Decrement free chat limit
                     sender.setFreeChatLimit(sender.getFreeChatLimit() - 1);
                     userRepo.save(sender);
-                } else {
+                }
+            }
+        } else {
+            // Has active subscription, check plan chat limit
+            Integer chatLimit = activeSub.get().getPlan().getChatLimit();
+            if (chatLimit != null) {
+                List<Integer> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
+                if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
                     throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
                 }
             }
         }
 
         // Check if receiver has an active subscription
-        Optional<Subscription> receiverSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(receiver, SubscriptionStatus.ACTIVE);
-        if (receiverSub.isEmpty() || receiverSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            // Send default message to non-subscribed receiver
-            message.setContent(sender.getName() + " wants to send a message, subscribe to see their message");
-        }
+        // Optional<Subscription> receiverSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(receiver, SubscriptionStatus.ACTIVE);
+        // if (receiverSub.isEmpty() || receiverSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+        //     // Send default message to non-subscribed receiver
+        //     message.setContent(sender.getName() + " wants to send a message, subscribe to see their message");
+        // }
 
         return messageRepo.save(message);
     }
