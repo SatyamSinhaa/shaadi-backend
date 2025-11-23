@@ -37,8 +37,8 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        long totalUsers = userService.findAll().size();
-        long totalAdmins = userService.findAll().stream().filter(u -> u.getRole() == Role.ADMIN).count();
+        long totalUsers = userService.findAll(null).size();
+        long totalAdmins = userService.findAll(null).stream().filter(u -> u.getRole() == Role.ADMIN).count();
         long totalSubscriptions = subscriptionService.findAll().size();
         model.addAttribute("stats", Map.of(
             "totalUsers", totalUsers,
@@ -50,7 +50,7 @@ public class AdminController {
 
     @GetMapping("/users")
     public String getAllUsers(Model model) {
-        model.addAttribute("users", userService.findAll());
+        model.addAttribute("users", userService.findAll(null));
         return "admin/users";
     }
 
@@ -117,7 +117,7 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<List<User>> getAllUsersApi() {
         try {
-            return ResponseEntity.ok(userService.findAll());
+            return ResponseEntity.ok(userService.findAll(null));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
         }
@@ -127,8 +127,8 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getStatsApi() {
         try {
-            long totalUsers = userService.findAll().size();
-            long totalAdmins = userService.findAll().stream().filter(u -> u.getRole() == Role.ADMIN).count();
+            long totalUsers = userService.findAll(null).size();
+            long totalAdmins = userService.findAll(null).stream().filter(u -> u.getRole() == Role.ADMIN).count();
             long totalSubscriptions = subscriptionService.findAll().size();
             return ResponseEntity.ok(Map.of(
                 "totalUsers", totalUsers,

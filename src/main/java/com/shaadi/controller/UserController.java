@@ -29,6 +29,16 @@ public class UserController {
         this.emailService = emailService;
     }
 
+    @GetMapping("/{userId}/subscription")
+    public ResponseEntity<?> getSubscription(@PathVariable Integer userId) {
+        Optional<com.shaadi.dto.SubscriptionResponseDto> subscriptionDto = userService.getActiveSubscriptionDtoByUserId(userId);
+        if (subscriptionDto.isPresent()) {
+            return ResponseEntity.ok(subscriptionDto.get());
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "Active subscription not found"));
+        }
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRegistrationDto registrationDto) {
         try {

@@ -17,6 +17,7 @@ import com.shaadi.repository.PhotoRepository;
 import com.shaadi.repository.PlanRepository;
 import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
+import com.shaadi.dto.SubscriptionResponseDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +41,32 @@ public class UserService {
         this.messageRepo = messageRepo;
         this.favouriteRepo = favouriteRepo;
         this.photoRepo = photoRepo;
+    }
+
+    public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Integer userId) {
+        Optional<User> userOpt = userRepo.findById(userId);
+        if (userOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        User user = userOpt.get();
+
+        Optional<Subscription> subscriptionOpt = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(user, SubscriptionStatus.ACTIVE);
+
+        return subscriptionOpt.map(sub -> {
+            SubscriptionResponseDto dto = new SubscriptionResponseDto();
+            dto.setSubscriptionId(sub.getId());
+            dto.setUserId(user.getId());
+            Plan plan = sub.getPlan();
+            dto.setPlanId(plan.getId());
+            dto.setPlanName(plan.getName());
+            dto.setPlanDurationMonths(plan.getDurationMonths());
+            dto.setPlanChatLimit(plan.getChatLimit());
+            dto.setStartDate(sub.getStartDate());
+            dto.setExpiryDate(sub.getExpiryDate());
+            dto.setStatus(sub.getStatus().name());
+            dto.setChatLimit(sub.getChatLimit());
+            return dto;
+        });
     }
 
     public User register(User user) {
@@ -187,34 +214,34 @@ public class UserService {
         // Check for existing active subscription
         Optional<Subscription> existingActive = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(user, SubscriptionStatus.ACTIVE);
 
-        if (plan.getIsAddon()) {
-            // Addon plan: extend chat limit without changing expiry
-            if (existingActive.isEmpty() || !existingActive.get().getExpiryDate().isAfter(now)) {
-                throw new IllegalArgumentException("Addon plans require an active subscription");
-            }
-            Subscription existing = existingActive.get();
-            existing.setChatLimit(existing.getChatLimit() + plan.getChatLimit());
-            return subscriptionRepo.save(existing);
-        } else {
-            // Regular plan: extend expiry or create new
-            if (existingActive.isPresent() && existingActive.get().getExpiryDate().isAfter(now)) {
-                // Extend the existing subscription
-                Subscription existing = existingActive.get();
-                existing.setExpiryDate(existing.getExpiryDate().plusMonths(plan.getDurationMonths()));
-                return subscriptionRepo.save(existing);
-            } else {
-                // Create new subscription
-                LocalDateTime expiry = now.plusMonths(plan.getDurationMonths());
-                Subscription subscription = new Subscription();
-                subscription.setUser(user);
-                subscription.setPlan(plan);
-                subscription.setStartDate(now);
-                subscription.setExpiryDate(expiry);
-                subscription.setStatus(SubscriptionStatus.ACTIVE);
-                subscription.setChatLimit(plan.getChatLimit());
-                return subscriptionRepo.save(subscription);
-            }
-        }
+if (Boolean.TRUE.equals(plan.getIsAddon())) {
+    // Addon plan: extend chat limit without changing expiry
+    if (existingActive.isEmpty() || !existingActive.get().getExpiryDate().isAfter(now)) {
+        throw new IllegalArgumentException("Addon plans require an active subscription");
+    }
+    Subscription existing = existingActive.get();
+    existing.setChatLimit(existing.getChatLimit() + plan.getChatLimit());
+    return subscriptionRepo.save(existing);
+} else {
+    // Regular plan: extend expiry or create new
+    if (existingActive.isPresent() && existingActive.get().getExpiryDate().isAfter(now)) {
+        // Extend the existing subscription
+        Subscription existing = existingActive.get();
+        existing.setExpiryDate(existing.getExpiryDate().plusMonths(plan.getDurationMonths()));
+        return subscriptionRepo.save(existing);
+    } else {
+        // Create new subscription
+        LocalDateTime expiry = now.plusMonths(plan.getDurationMonths());
+        Subscription subscription = new Subscription();
+        subscription.setUser(user);
+        subscription.setPlan(plan);
+        subscription.setStartDate(now);
+        subscription.setExpiryDate(expiry);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setChatLimit(plan.getChatLimit());
+        return subscriptionRepo.save(subscription);
+    }
+}
     }
 
     public void addFavourite(Integer userId, Integer favouritedUserId) {
