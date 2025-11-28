@@ -45,26 +45,14 @@ public class ChatService {
         // Check if sender has an active subscription
         Optional<Subscription> activeSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(sender, SubscriptionStatus.ACTIVE);
         if (activeSub.isEmpty() || activeSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-            // No active subscription, check free chat limit
+            throw new IllegalStateException("Active subscription required to chat");
+        }
+        // Has active subscription, check plan chat limit
+        Integer chatLimit = activeSub.get().getPlan().getChatLimit();
+        if (chatLimit != null) {
             List<Integer> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
-            if (!chatPartnerIds.contains(receiver.getId())) {
-                // Trying to start a new chat
-                if (sender.getFreeChatLimit() <= 0) {
-                    throw new IllegalStateException("Free chat limit reached. Subscribe to chat with more users.");
-                } else {
-                    // Decrement free chat limit
-                    sender.setFreeChatLimit(sender.getFreeChatLimit() - 1);
-                    userRepo.save(sender);
-                }
-            }
-        } else {
-            // Has active subscription, check plan chat limit
-            Integer chatLimit = activeSub.get().getPlan().getChatLimit();
-            if (chatLimit != null) {
-                List<Integer> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
-                if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
-                    throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
-                }
+            if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
+                throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
             }
         }
 

@@ -17,6 +17,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Inte
     List<Subscription> findByUserAndStatus(User user, SubscriptionStatus status);
     Optional<Subscription> findFirstByUserAndStatusOrderByExpiryDateDesc(User user, SubscriptionStatus status);
     List<Subscription> findByStatusAndExpiryDateBefore(SubscriptionStatus status, java.time.LocalDateTime expiryDate);
+    List<Subscription> findByUserOrderByStartDateDesc(User user);
 
     @Modifying
     @Query("DELETE FROM Subscription s WHERE s.user.id = :userId")

@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.shaadi.entity.Message;
+import com.shaadi.entity.Plan;
 import com.shaadi.entity.Subscription;
 import com.shaadi.entity.SubscriptionStatus;
 import com.shaadi.entity.User;
@@ -19,6 +20,7 @@ import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +52,10 @@ public class ChatServiceTest {
         Subscription activeSub = new Subscription();
         activeSub.setExpiryDate(LocalDateTime.now().plusDays(1));
         activeSub.setStatus(SubscriptionStatus.ACTIVE);
+        activeSub.setPlan(new Plan());
 
+        when(userRepo.findById(1)).thenReturn(Optional.of(sender));
+        when(userRepo.findById(2)).thenReturn(Optional.of(receiver));
         when(subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(sender, SubscriptionStatus.ACTIVE))
             .thenReturn(Optional.of(activeSub));
         when(messageRepo.save(message)).thenReturn(message);
@@ -73,6 +78,8 @@ public class ChatServiceTest {
         message.setReceiver(receiver);
         message.setContent("Hello");
 
+        when(userRepo.findById(1)).thenReturn(Optional.of(sender));
+        when(userRepo.findById(2)).thenReturn(Optional.of(receiver));
         when(subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(sender, SubscriptionStatus.ACTIVE))
             .thenReturn(Optional.empty());
 
@@ -94,6 +101,8 @@ public class ChatServiceTest {
         message.setReceiver(receiver);
         message.setContent("Hello");
 
+        when(userRepo.findById(1)).thenReturn(Optional.of(sender));
+        when(userRepo.findById(2)).thenReturn(Optional.of(receiver));
         when(subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(sender, SubscriptionStatus.ACTIVE))
             .thenReturn(Optional.empty());
 

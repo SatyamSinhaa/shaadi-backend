@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.shaadi.entity.Favourite;
-import com.shaadi.entity.Photo;
 import com.shaadi.entity.Plan;
 import com.shaadi.entity.Role;
 import com.shaadi.entity.Subscription;
@@ -13,7 +12,6 @@ import com.shaadi.entity.SubscriptionStatus;
 import com.shaadi.entity.User;
 import com.shaadi.repository.FavouriteRepository;
 import com.shaadi.repository.MessageRepository;
-import com.shaadi.repository.PhotoRepository;
 import com.shaadi.repository.PlanRepository;
 import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
@@ -32,15 +30,13 @@ public class UserService {
     private final SubscriptionRepository subscriptionRepo;
     private final MessageRepository messageRepo;
     private final FavouriteRepository favouriteRepo;
-    private final PhotoRepository photoRepo;
 
-    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, PhotoRepository photoRepo) {
+    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo) {
         this.userRepo = userRepo;
         this.planRepo = planRepo;
         this.subscriptionRepo = subscriptionRepo;
         this.messageRepo = messageRepo;
         this.favouriteRepo = favouriteRepo;
-        this.photoRepo = photoRepo;
     }
 
     public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Integer userId) {
@@ -67,6 +63,32 @@ public class UserService {
             dto.setChatLimit(sub.getChatLimit());
             return dto;
         });
+    }
+
+    public List<SubscriptionResponseDto> getSubscriptionHistoryByUserId(Integer userId) {
+        Optional<User> userOpt = userRepo.findById(userId);
+        if (userOpt.isEmpty()) {
+            return List.of();
+        }
+        User user = userOpt.get();
+
+        List<Subscription> subscriptions = subscriptionRepo.findByUserOrderByStartDateDesc(user);
+
+        return subscriptions.stream().map(sub -> {
+            SubscriptionResponseDto dto = new SubscriptionResponseDto();
+            dto.setSubscriptionId(sub.getId());
+            dto.setUserId(user.getId());
+            Plan plan = sub.getPlan();
+            dto.setPlanId(plan.getId());
+            dto.setPlanName(plan.getName());
+            dto.setPlanDurationMonths(plan.getDurationMonths());
+            dto.setPlanChatLimit(plan.getChatLimit());
+            dto.setStartDate(sub.getStartDate());
+            dto.setExpiryDate(sub.getExpiryDate());
+            dto.setStatus(sub.getStatus().name());
+            dto.setChatLimit(sub.getChatLimit());
+            return dto;
+        }).toList();
     }
 
     public User register(User user) {
@@ -282,38 +304,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         return favouriteRepo.findByUser(user);
     }
 
-    public Photo addPhoto(Integer userId, String url) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        int maxPhotos = hasActiveSubscription(user) ? 5 : 1;
-        List<Photo> existingPhotos = photoRepo.findByUser(user);
-        if (existingPhotos.size() >= maxPhotos) {
-            throw new IllegalArgumentException("Photo limit reached. Upgrade to premium for more photos.");
-        }
-
-        Photo photo = new Photo();
-        photo.setUser(user);
-        photo.setUrl(url);
-        return photoRepo.save(photo);
-    }
-
-    public void removePhoto(Integer userId, Integer photoId) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Photo photo = photoRepo.findById(photoId)
-                .orElseThrow(() -> new IllegalArgumentException("Photo not found"));
-        if (!photo.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Photo does not belong to user");
-        }
-        photoRepo.delete(photo);
-    }
-
-    public List<Photo> getPhotos(Integer userId) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return photoRepo.findByUser(user);
-    }
 
     private boolean hasActiveSubscription(User user) {
         LocalDateTime now = LocalDateTime.now();

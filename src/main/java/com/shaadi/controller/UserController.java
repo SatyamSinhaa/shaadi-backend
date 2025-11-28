@@ -5,13 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.shaadi.entity.User;
-import com.shaadi.entity.Photo;
 import com.shaadi.service.UserService;
 import com.shaadi.service.EmailService;
 import com.shaadi.dto.UserRegistrationDto;
 import com.shaadi.dto.ForgotPasswordDto;
 import com.shaadi.dto.LoginDto;
 import com.shaadi.dto.PurchaseSubscriptionDto;
+import com.shaadi.dto.SubscriptionResponseDto;
 import com.shaadi.entity.Favourite;
 import com.shaadi.entity.Subscription;
 
@@ -36,6 +36,16 @@ public class UserController {
             return ResponseEntity.ok(subscriptionDto.get());
         } else {
             return ResponseEntity.status(404).body(Map.of("error", "Active subscription not found"));
+        }
+    }
+
+    @GetMapping("/{userId}/subscription-history")
+    public ResponseEntity<List<SubscriptionResponseDto>> getSubscriptionHistory(@PathVariable Integer userId) {
+        try {
+            List<SubscriptionResponseDto> history = userService.getSubscriptionHistoryByUserId(userId);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(List.of());
         }
     }
 
@@ -188,36 +198,5 @@ public class UserController {
         }
     }
 
-    @PostMapping("/{userId}/photos")
-    public ResponseEntity<?> addPhoto(@PathVariable Integer userId, @RequestBody Map<String, String> payload) {
-        try {
-            String url = payload.get("url");
-            if (url == null || url.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "URL is required"));
-            }
-            Photo photo = userService.addPhoto(userId, url);
-            return ResponseEntity.ok(photo);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
-    @DeleteMapping("/{userId}/photos/{photoId}")
-    public ResponseEntity<?> removePhoto(@PathVariable Integer userId, @PathVariable Integer photoId) {
-        try {
-            userService.removePhoto(userId, photoId);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{userId}/photos")
-    public ResponseEntity<List<Photo>> getPhotos(@PathVariable Integer userId) {
-        try {
-            return ResponseEntity.ok(userService.getPhotos(userId));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(List.of());
-        }
-    }
 }

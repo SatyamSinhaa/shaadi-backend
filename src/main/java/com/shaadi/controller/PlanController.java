@@ -21,6 +21,16 @@ public class PlanController {
     }
 
     @GetMapping
+    public ResponseEntity<?> getAllPublishedPlans() {
+        try {
+            List<Plan> plans = planService.getAllPublishedPlans();
+            return ResponseEntity.ok(plans);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to retrieve plans"));
+        }
+    }
+
+    @GetMapping("/all")
     public ResponseEntity<?> getAllPlans() {
         try {
             List<Plan> plans = planService.getAllPlans();
