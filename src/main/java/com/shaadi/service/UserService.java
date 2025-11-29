@@ -139,20 +139,25 @@ public class UserService {
         User existing = userRepo.findById(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Update only non-null fields to avoid overwriting password and other sensitive data
-        if (user.getName() != null) existing.setName(user.getName());
-        if (user.getEmail() != null) existing.setEmail(user.getEmail());
-        if (user.getAge() != null) existing.setAge(user.getAge());
-        if (user.getGender() != null) existing.setGender(capitalize(user.getGender()));
-        if (user.getGotr() != null) existing.setGotr(user.getGotr());
-        if (user.getCaste() != null) existing.setCaste(user.getCaste());
-        if (user.getCategory() != null) existing.setCategory(user.getCategory());
-        if (user.getReligion() != null) existing.setReligion(user.getReligion());
-        if (user.getCityTown() != null) existing.setCityTown(user.getCityTown());
-        if (user.getDistrict() != null) existing.setDistrict(user.getDistrict());
-        if (user.getState() != null) existing.setState(user.getState());
-        if (user.getBio() != null) existing.setBio(user.getBio());
-        if (user.getPhotoUrl() != null) existing.setPhotoUrl(user.getPhotoUrl());
+        // Update all provided fields (including null values to clear them)
+        // Preserve password and role - don't allow updating these via this endpoint
+        existing.setName(user.getName());
+        existing.setEmail(user.getEmail());
+        existing.setAge(user.getAge());
+        if (user.getGender() != null) {
+            existing.setGender(capitalize(user.getGender()));
+        } else {
+            existing.setGender(user.getGender());
+        }
+        existing.setGotr(user.getGotr());
+        existing.setCaste(user.getCaste());
+        existing.setCategory(user.getCategory());
+        existing.setReligion(user.getReligion());
+        existing.setCityTown(user.getCityTown());
+        existing.setDistrict(user.getDistrict());
+        existing.setState(user.getState());
+        existing.setBio(user.getBio());
+        existing.setPhotoUrl(user.getPhotoUrl());
 
         return userRepo.save(existing);
     }

@@ -87,4 +87,8 @@ public class ChatService {
         // Admin can send messages without subscription checks
         return messageRepo.save(message);
     }
+
+    public void markMessagesAsRead(User receiver, User sender) {
+        messageRepo.markAsRead(receiver.getId(), sender.getId());
+    }
 }

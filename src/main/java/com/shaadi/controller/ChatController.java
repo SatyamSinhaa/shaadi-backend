@@ -75,4 +75,19 @@ public class ChatController {
             return ResponseEntity.status(500).body(Map.of("error", "An error occurred while deleting the message"));
         }
     }
+
+    @PostMapping("/mark-read/{receiverId}/{senderId}")
+    public ResponseEntity<?> markMessagesAsRead(@PathVariable int receiverId, @PathVariable int senderId) {
+        try {
+            Optional<User> receiverOpt = userRepo.findById(receiverId);
+            Optional<User> senderOpt = userRepo.findById(senderId);
+            if (receiverOpt.isEmpty() || senderOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            chatService.markMessagesAsRead(receiverOpt.get(), senderOpt.get());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An error occurred while marking messages as read"));
+        }
+    }
 }

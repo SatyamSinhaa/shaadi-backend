@@ -26,4 +26,8 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 
     @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender LEFT JOIN FETCH m.receiver WHERE m.sender = :user OR m.receiver = :user")
     List<Message> findBySenderOrReceiverWithUsers(@Param("user") User user);
+
+    @Modifying
+    @Query("UPDATE Message m SET m.read = true WHERE m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.read = false")
+    void markAsRead(@Param("receiverId") Integer receiverId, @Param("senderId") Integer senderId);
 }
