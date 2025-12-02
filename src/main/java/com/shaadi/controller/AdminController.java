@@ -194,7 +194,7 @@ public class AdminController {
                     .orElseThrow(() -> new IllegalArgumentException("Receiver not found"));
 
             // Assume admin is the first admin user or create a dummy admin user
-            User admin = userService.findAll().stream()
+            User admin = userService.findAll(null).stream()
                     .filter(u -> u.getRole() == Role.ADMIN)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("No admin user found"));
