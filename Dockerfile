@@ -1,14 +1,23 @@
-# Use official Java runtime image
-FROM eclipse-temurin:17-jdk-alpine
+# Use official Java Maven image to build the app
+FROM maven:3.9.2-eclipse-temurin-17 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven build output
-COPY target/*.jar app.jar
+# Copy pom and source code
+COPY pom.xml .
+COPY src ./src
 
-# Expose port
+# Build the jar
+RUN mvn clean package -DskipTests
+
+# Use a smaller JDK image for running
+FROM eclipse-temurin:17-jdk-alpine
+
+WORKDIR /app
+
+# Copy the built jar from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
 
-# Run the jar file
 ENTRYPOINT ["java","-jar","app.jar"]
