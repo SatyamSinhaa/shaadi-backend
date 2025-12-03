@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.shaadi.entity.User;
 import com.shaadi.service.UserService;
-import com.shaadi.service.EmailService;
 import com.shaadi.dto.UserRegistrationDto;
-import com.shaadi.dto.ForgotPasswordDto;
 import com.shaadi.dto.LoginDto;
 import com.shaadi.dto.PurchaseSubscriptionDto;
 import com.shaadi.dto.SubscriptionResponseDto;
@@ -22,11 +20,9 @@ import java.util.*;
 @CrossOrigin
 public class UserController {
     private final UserService userService;
-    private final EmailService emailService;
 
-    public UserController(UserService userService, EmailService emailService) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.emailService = emailService;
     }
 
     @GetMapping("/{userId}/subscription")
@@ -134,30 +130,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {
-        try {
-            String resetToken = userService.initiatePasswordReset(forgotPasswordDto.getEmail());
-            emailService.sendPasswordResetEmail(forgotPasswordDto.getEmail(), resetToken);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Password reset email sent");
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestParam String email, @RequestParam String newPassword) {
-        try {
-            userService.resetPassword(email, newPassword);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Password reset successfully");
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
     @PostMapping("/{userId}/purchase-subscription")
     public ResponseEntity<?> purchaseSubscription(@PathVariable Integer userId, @RequestBody PurchaseSubscriptionDto dto) {

@@ -211,24 +211,7 @@ public class UserService {
         userRepo.deleteById(id);
     }
 
-    public String initiatePasswordReset(String email) {
-        Optional<User> user = userRepo.findByEmail(email);
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User not found with email: " + email);
-        }
-        // Generate a reset token (in a real app, store this with expiration)
-        String resetToken = UUID.randomUUID().toString();
-        // Here you would typically save the token to the user or a separate table
-        // For simplicity, we'll just return it (in production, send via email)
-        return resetToken;
-    }
 
-    public void resetPassword(String email, String newPassword) {
-        User user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
-        user.setPassword(newPassword);
-        userRepo.save(user);
-    }
 
     public Subscription purchaseSubscription(Integer userId, Integer planId) {
         User user = userRepo.findById(userId)
