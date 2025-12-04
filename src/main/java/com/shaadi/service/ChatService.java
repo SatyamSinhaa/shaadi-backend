@@ -57,11 +57,11 @@ public class ChatService {
         }
 
         // Check if receiver has an active subscription
-        // Optional<Subscription> receiverSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(receiver, SubscriptionStatus.ACTIVE);
-        // if (receiverSub.isEmpty() || receiverSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
-        //     // Send default message to non-subscribed receiver
-        //     message.setContent(sender.getName() + " wants to send a message, subscribe to see their message");
-        // }
+        Optional<Subscription> receiverSub = subscriptionRepo.findFirstByUserAndStatusOrderByExpiryDateDesc(receiver, SubscriptionStatus.ACTIVE);
+        if (receiverSub.isEmpty() || receiverSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+            // Send default message to non-subscribed receiver
+            message.setContent(sender.getName() + " want to send you a message, to start conversation please purchase a plan");
+        }
 
         return messageRepo.save(message);
     }
