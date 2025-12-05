@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller
+@CrossOrigin(origins = "*")
 @RequestMapping("/admin")
 public class AdminController {
     private final UserService userService;
@@ -288,6 +289,16 @@ public class AdminController {
     }
 
 
+    // Plan API endpoints
+    @GetMapping("/api/plans")
+    @ResponseBody
+    public ResponseEntity<List<Plan>> getAllPlansApi() {
+        try {
+            return ResponseEntity.ok(planService.getAllPlans());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(List.of());
+        }
+    }
 
     @PostMapping("/api/plans")
     @ResponseBody
