@@ -17,9 +17,10 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(java.util.Arrays.asList(
-                    "http://localhost:5173", 
-                    "http://localhost:5174", 
-                    "http://localhost:3000"
+                    "http://localhost:5173",
+                    "http://localhost:5174",
+                    "http://localhost:3000",
+                    "https://shaadi-admin.onrender.com"
                 ));
                 config.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(java.util.Arrays.asList("*"));
