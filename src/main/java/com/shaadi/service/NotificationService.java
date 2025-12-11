@@ -1,0 +1,76 @@
+package com.shaadi.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.shaadi.entity.Notification;
+import com.shaadi.entity.NotificationType;
+import com.shaadi.entity.User;
+import com.shaadi.repository.NotificationRepository;
+import com.shaadi.repository.UserRepository;
+
+import java.util.List;
+
+@Service
+@Transactional
+public class NotificationService {
+    private final NotificationRepository notificationRepo;
+    private final UserRepository userRepo;
+
+    public NotificationService(NotificationRepository notificationRepo, UserRepository userRepo) {
+        this.notificationRepo = notificationRepo;
+        this.userRepo = userRepo;
+    }
+
+    public Notification createNotification(NotificationType type, String message, User recipient, User relatedUser) {
+        Notification notification = new Notification();
+        notification.setType(type);
+        notification.setMessage(message);
+        notification.setRecipient(recipient);
+        notification.setRelatedUser(relatedUser);
+        return notificationRepo.save(notification);
+    }
+
+    public List<Notification> getNotificationsForUser(int userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return notificationRepo.findByRecipientOrderByCreatedAtDesc(user);
+    }
+
+    public List<Notification> getUnreadNotificationsForUser(int userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return notificationRepo.findByRecipientAndIsReadOrderByCreatedAtDesc(user, false);
+    }
+
+    public void markNotificationAsRead(long notificationId, int userId) {
+        notificationRepo.markAsRead(notificationId, userId);
+    }
+
+    public void markAllNotificationsAsRead(int userId) {
+        notificationRepo.markAllAsRead(userId);
+    }
+
+    public long getUnreadNotificationCount(int userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return notificationRepo.countByRecipientAndIsRead(user, false);
+    }
+
+    public void deleteNotification(long notificationId) {
+        notificationRepo.deleteById(notificationId);
+    }
+
+    public void deleteRequestReceivedNotification(User recipient, User sender) {
+        // Find and delete the REQUEST_RECEIVED notification for this specific request
+        List<Notification> notifications = notificationRepo.findByRecipientOrderByCreatedAtDesc(recipient);
+        for (Notification notification : notifications) {
+            if (notification.getType() == NotificationType.REQUEST_RECEIVED &&
+                notification.getRelatedUser() != null &&
+                notification.getRelatedUser().getId() == sender.getId()) {
+                notificationRepo.delete(notification);
+                break; // Delete only the first matching notification
+            }
+        }
+    }
+}
