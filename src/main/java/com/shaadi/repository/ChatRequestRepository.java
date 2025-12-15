@@ -25,4 +25,7 @@ public interface ChatRequestRepository extends JpaRepository<ChatRequest, Long> 
 
     @Query("SELECT cr FROM ChatRequest cr WHERE cr.sender = :user OR cr.receiver = :user")
     List<ChatRequest> findBySenderOrReceiver(@Param("user") User user);
+
+    @Query("SELECT cr FROM ChatRequest cr WHERE (cr.sender.id = :userId1 AND cr.receiver.id = :userId2) OR (cr.sender.id = :userId2 AND cr.receiver.id = :userId1)")
+    List<ChatRequest> findRequestsBetweenUsersByIds(@Param("userId1") int userId1, @Param("userId2") int userId2);
 }

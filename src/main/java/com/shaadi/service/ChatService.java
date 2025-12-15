@@ -28,13 +28,15 @@ public class ChatService {
     private final SubscriptionRepository subscriptionRepo;
     private final ChatRequestRepository chatRequestRepo;
     private final NotificationService notificationService;
+    private final UserService userService;
 
-    public ChatService(MessageRepository messageRepo, UserRepository userRepo, SubscriptionRepository subscriptionRepo, ChatRequestRepository chatRequestRepo, NotificationService notificationService) {
+    public ChatService(MessageRepository messageRepo, UserRepository userRepo, SubscriptionRepository subscriptionRepo, ChatRequestRepository chatRequestRepo, NotificationService notificationService, UserService userService) {
         this.messageRepo = messageRepo;
         this.userRepo = userRepo;
         this.subscriptionRepo = subscriptionRepo;
         this.chatRequestRepo = chatRequestRepo;
         this.notificationService = notificationService;
+        this.userService = userService;
     }
 
     public Message sendMessage(Message message) {
@@ -87,7 +89,17 @@ public class ChatService {
     }
 
     public List<Message> getMessagesForUser(User user) {
-        return messageRepo.findBySenderOrReceiverWithUsers(user);
+        List<Message> messages = messageRepo.findBySenderOrReceiverWithUsers(user);
+
+        // Filter out messages from/to blocked users
+        return messages.stream()
+                .filter(message -> {
+                    Integer otherUserId = message.getSender().getId().equals(user.getId()) ?
+                            message.getReceiver().getId() : message.getSender().getId();
+                    return !userService.isBlocked(user.getId(), otherUserId) &&
+                           !userService.isBlocked(otherUserId, user.getId());
+                })
+                .toList();
     }
 
     public void deleteMessage(int id) {
@@ -234,7 +246,17 @@ public class ChatService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        return chatRequestRepo.findBySenderOrReceiver(user);
+        List<ChatRequest> requests = chatRequestRepo.findBySenderOrReceiver(user);
+
+        // Filter out requests from/to blocked users
+        return requests.stream()
+                .filter(request -> {
+                    Integer otherUserId = request.getSender().getId().equals(userId) ?
+                            request.getReceiver().getId() : request.getSender().getId();
+                    return !userService.isBlocked(userId, otherUserId) &&
+                           !userService.isBlocked(otherUserId, userId);
+                })
+                .toList();
     }
 
     public boolean canChat(int userId1, int userId2) {

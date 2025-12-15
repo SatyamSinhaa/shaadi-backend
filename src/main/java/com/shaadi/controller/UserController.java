@@ -12,6 +12,7 @@ import com.shaadi.dto.PurchaseSubscriptionDto;
 import com.shaadi.dto.SubscriptionResponseDto;
 import com.shaadi.entity.Favourite;
 import com.shaadi.entity.Subscription;
+import com.shaadi.entity.Block;
 
 import java.util.*;
 
@@ -74,9 +75,11 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> all(@RequestParam(required = false) String gender) {
+    public ResponseEntity<List<User>> all(
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) Integer currentUserId) {
         try {
-            return ResponseEntity.ok(userService.findAll(gender));
+            return ResponseEntity.ok(userService.findAll(gender, currentUserId));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
         }
@@ -112,9 +115,10 @@ public class UserController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String religion,
-            @RequestParam(required = false) String gender) {
+            @RequestParam(required = false) String gender,
+            @RequestParam Integer currentUserId) {
         try {
-            return ResponseEntity.ok(userService.search(minAge, maxAge, name, location, religion, gender));
+            return ResponseEntity.ok(userService.search(minAge, maxAge, name, location, religion, gender, currentUserId));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
         }
@@ -166,6 +170,35 @@ public class UserController {
     public ResponseEntity<List<Favourite>> getFavourites(@PathVariable Integer userId) {
         try {
             return ResponseEntity.ok(userService.getFavourites(userId));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(List.of());
+        }
+    }
+
+    @PostMapping("/{blockerId}/block/{blockedId}")
+    public ResponseEntity<?> blockUser(@PathVariable Integer blockerId, @PathVariable Integer blockedId) {
+        try {
+            userService.blockUser(blockerId, blockedId);
+            return ResponseEntity.ok(Map.of("message", "User blocked successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{blockerId}/block/{blockedId}")
+    public ResponseEntity<?> unblockUser(@PathVariable Integer blockerId, @PathVariable Integer blockedId) {
+        try {
+            userService.unblockUser(blockerId, blockedId);
+            return ResponseEntity.ok(Map.of("message", "User unblocked successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{blockerId}/blocked")
+    public ResponseEntity<List<Block>> getBlockedUsers(@PathVariable Integer blockerId) {
+        try {
+            return ResponseEntity.ok(userService.getBlockedUsers(blockerId));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
         }

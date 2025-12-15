@@ -10,6 +10,7 @@ import com.shaadi.entity.Role;
 import com.shaadi.entity.Subscription;
 import com.shaadi.entity.SubscriptionStatus;
 import com.shaadi.entity.User;
+import com.shaadi.repository.BlockRepository;
 import com.shaadi.repository.FavouriteRepository;
 import com.shaadi.repository.MessageRepository;
 import com.shaadi.repository.PlanRepository;
@@ -30,13 +31,15 @@ public class UserService {
     private final SubscriptionRepository subscriptionRepo;
     private final MessageRepository messageRepo;
     private final FavouriteRepository favouriteRepo;
+    private final BlockRepository blockRepo;
 
-    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo) {
+    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, BlockRepository blockRepo) {
         this.userRepo = userRepo;
         this.planRepo = planRepo;
         this.subscriptionRepo = subscriptionRepo;
         this.messageRepo = messageRepo;
         this.favouriteRepo = favouriteRepo;
+        this.blockRepo = blockRepo;
     }
 
     public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Integer userId) {
@@ -119,12 +122,22 @@ public class UserService {
     }
 
     public List<User> findAll(String gender) {
-        if (gender != null && !gender.isEmpty()) {
-            return userRepo.findAll().stream()
-                    .filter(user -> user.getGender() != null && user.getGender().equalsIgnoreCase(gender))
+        return findAll(gender, null);
+    }
+
+    public List<User> findAll(String gender, Integer currentUserId) {
+        List<User> users = userRepo.findAll().stream()
+                .filter(user -> gender == null || gender.isEmpty() ||
+                        (user.getGender() != null && user.getGender().equalsIgnoreCase(gender)))
+                .toList();
+
+        if (currentUserId != null) {
+            users = users.stream()
+                    .filter(user -> !isBlocked(currentUserId, user.getId()) && !isBlocked(user.getId(), currentUserId))
                     .toList();
         }
-        return userRepo.findAll();
+
+        return users;
     }
 
     public Optional<User> findById(Integer id) {
@@ -169,6 +182,10 @@ public class UserService {
     }
 
     public List<User> search(Integer minAge, Integer maxAge, String name, String location, String religion, String gender) {
+        return search(minAge, maxAge, name, location, religion, gender, null);
+    }
+
+    public List<User> search(Integer minAge, Integer maxAge, String name, String location, String religion, String gender, Integer currentUserId) {
         Specification<User> spec = (root, query, cb) -> cb.conjunction();
 
         if (minAge != null && maxAge != null) {
@@ -180,7 +197,7 @@ public class UserService {
         }
 
         if (name != null && !name.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+            spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("name")), name.toLowerCase() + "%"));
         }
 
         if (location != null && !location.isEmpty()) {
@@ -195,7 +212,15 @@ public class UserService {
             spec = spec.and((root, query, cb) -> cb.equal(cb.lower(root.get("gender")), gender.toLowerCase()));
         }
 
-        return userRepo.findAll(spec);
+        List<User> users = userRepo.findAll(spec);
+
+        if (currentUserId != null) {
+            users = users.stream()
+                    .filter(user -> !isBlocked(currentUserId, user.getId()) && !isBlocked(user.getId(), currentUserId))
+                    .toList();
+        }
+
+        return users;
     }
 
     public void deleteUser(Integer id) {
@@ -289,10 +314,65 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
     public List<Favourite> getFavourites(Integer userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return favouriteRepo.findByUser(user);
+        List<Favourite> favourites = favouriteRepo.findByUser(user);
+
+        // Filter out blocked users
+        return favourites.stream()
+                .filter(fav -> !isBlocked(userId, fav.getFavouritedUser().getId()) &&
+                              !isBlocked(fav.getFavouritedUser().getId(), userId))
+                .toList();
     }
 
+    public void blockUser(Integer blockerId, Integer blockedId) {
+        User blocker = userRepo.findById(blockerId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
+        User blocked = userRepo.findById(blockedId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocked user not found"));
 
+        if (blockerId.equals(blockedId)) {
+            throw new IllegalArgumentException("Cannot block yourself");
+        }
+
+        Optional<com.shaadi.entity.Block> existing = blockRepo.findByBlockerAndBlocked(blocker, blocked);
+        if (existing.isPresent()) {
+            throw new IllegalArgumentException("User already blocked");
+        }
+
+        // Remove from favourites if exists
+        Optional<Favourite> favourite = favouriteRepo.findByUserAndFavouritedUser(blocker, blocked);
+        favourite.ifPresent(favouriteRepo::delete);
+
+        com.shaadi.entity.Block block = new com.shaadi.entity.Block();
+        block.setBlocker(blocker);
+        block.setBlocked(blocked);
+        blockRepo.save(block);
+    }
+
+    public void unblockUser(Integer blockerId, Integer blockedId) {
+        User blocker = userRepo.findById(blockerId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
+        User blocked = userRepo.findById(blockedId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocked user not found"));
+
+        com.shaadi.entity.Block block = blockRepo.findByBlockerAndBlocked(blocker, blocked)
+                .orElseThrow(() -> new IllegalArgumentException("Block not found"));
+        blockRepo.delete(block);
+    }
+
+    public List<com.shaadi.entity.Block> getBlockedUsers(Integer blockerId) {
+        User blocker = userRepo.findById(blockerId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return blockRepo.findByBlocker(blocker);
+    }
+
+    public boolean isBlocked(Integer blockerId, Integer blockedId) {
+        User blocker = userRepo.findById(blockerId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
+        User blocked = userRepo.findById(blockedId)
+                .orElseThrow(() -> new IllegalArgumentException("Blocked user not found"));
+
+        return blockRepo.existsByBlockerAndBlocked(blocker, blocked);
+    }
 
     private boolean hasActiveSubscription(User user) {
         LocalDateTime now = LocalDateTime.now();
