@@ -1,5 +1,6 @@
 package com.shaadi.service;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,14 +30,16 @@ public class ChatService {
     private final ChatRequestRepository chatRequestRepo;
     private final NotificationService notificationService;
     private final UserService userService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatService(MessageRepository messageRepo, UserRepository userRepo, SubscriptionRepository subscriptionRepo, ChatRequestRepository chatRequestRepo, NotificationService notificationService, UserService userService) {
+    public ChatService(MessageRepository messageRepo, UserRepository userRepo, SubscriptionRepository subscriptionRepo, ChatRequestRepository chatRequestRepo, NotificationService notificationService, UserService userService, SimpMessagingTemplate messagingTemplate) {
         this.messageRepo = messageRepo;
         this.userRepo = userRepo;
         this.subscriptionRepo = subscriptionRepo;
         this.chatRequestRepo = chatRequestRepo;
         this.notificationService = notificationService;
         this.userService = userService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public Message sendMessage(Message message) {
@@ -80,6 +83,18 @@ public class ChatService {
         }
 
         Message savedMessage = messageRepo.save(message);
+
+        // Broadcast the message via WebSocket to both sender and receiver
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(savedMessage.getReceiver().getId()),
+            "/queue/messages",
+            savedMessage
+        );
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(savedMessage.getSender().getId()),
+            "/queue/messages",
+            savedMessage
+        );
 
         return savedMessage;
     }
@@ -142,6 +157,18 @@ public class ChatService {
         request.setStatus(ChatRequestStatus.PENDING);
 
         ChatRequest savedRequest = chatRequestRepo.save(request);
+
+        // Broadcast the chat request via WebSocket to both users
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(savedRequest.getReceiver().getId()),
+            "/queue/chatRequests",
+            savedRequest
+        );
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(savedRequest.getSender().getId()),
+            "/queue/chatRequests",
+            savedRequest
+        );
 
         // Create notification for the receiver
         notificationService.createNotification(

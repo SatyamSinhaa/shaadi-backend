@@ -1,5 +1,6 @@
 package com.shaadi.service;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +17,12 @@ import java.util.List;
 public class NotificationService {
     private final NotificationRepository notificationRepo;
     private final UserRepository userRepo;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public NotificationService(NotificationRepository notificationRepo, UserRepository userRepo) {
+    public NotificationService(NotificationRepository notificationRepo, UserRepository userRepo, SimpMessagingTemplate messagingTemplate) {
         this.notificationRepo = notificationRepo;
         this.userRepo = userRepo;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public Notification createNotification(NotificationType type, String message, User recipient, User relatedUser) {
@@ -28,7 +31,16 @@ public class NotificationService {
         notification.setMessage(message);
         notification.setRecipient(recipient);
         notification.setRelatedUser(relatedUser);
-        return notificationRepo.save(notification);
+        Notification savedNotification = notificationRepo.save(notification);
+
+        // Broadcast the notification via WebSocket to the recipient
+        messagingTemplate.convertAndSendToUser(
+            String.valueOf(savedNotification.getRecipient().getId()),
+            "/queue/notifications",
+            savedNotification
+        );
+
+        return savedNotification;
     }
 
     public List<Notification> getNotificationsForUser(int userId) {
