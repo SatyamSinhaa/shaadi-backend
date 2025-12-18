@@ -12,7 +12,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic", "/queue");
+        config.enableSimpleBroker("/topic", "/queue")
+              .setHeartbeatValue(new long[] {10000, 10000}); // 10 second heartbeat to keep connections alive
         config.setApplicationDestinationPrefixes("/app");
     }
 
