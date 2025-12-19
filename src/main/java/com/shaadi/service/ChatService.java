@@ -85,11 +85,13 @@ public class ChatService {
         Message savedMessage = messageRepo.save(message);
 
         // Broadcast the message via WebSocket to both sender and receiver
+        System.out.println("📤 Broadcasting message to receiver: " + savedMessage.getReceiver().getId());
         messagingTemplate.convertAndSendToUser(
             String.valueOf(savedMessage.getReceiver().getId()),
             "/queue/messages",
             savedMessage
         );
+        System.out.println("📤 Broadcasting message to sender: " + savedMessage.getSender().getId());
         messagingTemplate.convertAndSendToUser(
             String.valueOf(savedMessage.getSender().getId()),
             "/queue/messages",
