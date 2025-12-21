@@ -38,7 +38,7 @@ public class User {
     private Role role = Role.USER;
 
     // Photo gallery
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Photo> photos;
 
 
