@@ -175,6 +175,30 @@ public class UserService {
         return userRepo.save(existing);
     }
 
+    public void updateProfilePhoto(Integer userId, String photoUrl) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setPhotoUrl(photoUrl);
+        userRepo.save(user);
+    }
+
+    public void addPhotoToGallery(Integer userId, String photoUrl) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        com.shaadi.entity.Photo photo = new com.shaadi.entity.Photo();
+        photo.setUser(user);
+        photo.setUrl(photoUrl);
+        // CreatedAt is handled by default value or @PrePersist if I had it, but the entity has = LocalDateTime.now()
+        
+        if (user.getPhotos() == null) {
+            user.setPhotos(new java.util.ArrayList<>());
+        }
+        user.getPhotos().add(photo);
+        
+        userRepo.save(user); // Cascades save to photo
+    }
+
 
     public boolean isProfileComplete(User user) {
         return user.getAge() != null && user.getGender() != null &&

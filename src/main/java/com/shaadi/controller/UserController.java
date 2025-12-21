@@ -106,6 +106,30 @@ public class UserController {
         }
     }
 
+    @PostMapping("/{userId}/photo")
+    public ResponseEntity<?> updateProfilePhoto(@PathVariable Integer userId, @RequestBody com.shaadi.dto.PhotoUpdateRequest request) {
+        try {
+            userService.updateProfilePhoto(userId, request.getPhotoUrl());
+            return ResponseEntity.ok(Map.of("message", "Photo updated successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{userId}/gallery")
+    public ResponseEntity<?> addPhotoToGallery(@PathVariable Integer userId, @RequestBody Map<String, String> request) {
+        try {
+            String photoUrl = request.get("photoUrl");
+            if (photoUrl == null || photoUrl.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Photo URL is required"));
+            }
+            userService.addPhotoToGallery(userId, photoUrl);
+            return ResponseEntity.ok(Map.of("message", "Photo added to gallery successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
 
     @GetMapping("/search")
