@@ -34,23 +34,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    // Commented out for now - will be added back later
-    /*
-    @Bean
-    public UserDetailsService userDetailsService() {
-        // In-memory user for testing; replace with database-based service
-        UserDetails admin = User.withUsername("admin")
-            .password(passwordEncoder().encode("admin123"))
-            .roles("ADMIN")
-            .build();
-
-        return new InMemoryUserDetailsManager(admin);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-    */
 }
