@@ -130,6 +130,20 @@ public class UserController {
         }
     }
 
+    @PostMapping("/{userId}/fcm-token")
+    public ResponseEntity<?> updateFcmToken(@PathVariable Integer userId, @RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            if (token == null || token.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token is required"));
+            }
+            userService.updateFcmToken(userId, token);
+            return ResponseEntity.ok(Map.of("message", "FCM Token updated successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
 
     @GetMapping("/search")

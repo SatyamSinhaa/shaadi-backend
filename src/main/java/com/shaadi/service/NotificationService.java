@@ -18,11 +18,13 @@ public class NotificationService {
     private final NotificationRepository notificationRepo;
     private final UserRepository userRepo;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FCMService fcmService;
 
-    public NotificationService(NotificationRepository notificationRepo, UserRepository userRepo, SimpMessagingTemplate messagingTemplate) {
+    public NotificationService(NotificationRepository notificationRepo, UserRepository userRepo, SimpMessagingTemplate messagingTemplate, FCMService fcmService) {
         this.notificationRepo = notificationRepo;
         this.userRepo = userRepo;
         this.messagingTemplate = messagingTemplate;
+        this.fcmService = fcmService;
     }
 
     public Notification createNotification(NotificationType type, String message, User recipient, User relatedUser) {
@@ -39,6 +41,28 @@ public class NotificationService {
             "/queue/notifications",
             savedNotification
         );
+
+        // Send FCM Notification
+        try {
+            if (recipient.getFcmToken() != null && !recipient.getFcmToken().isEmpty()) {
+                String title = "Shaadi App";
+                // Customize title based on type if needed
+                if (type == NotificationType.REQUEST_RECEIVED) {
+                    title = "New Interest Received";
+                } else if (type == NotificationType.REQUEST_ACCEPTED) {
+                    title = "It's a Match!";
+                }
+                
+                fcmService.sendNotification(
+                        recipient.getFcmToken(),
+                        title,
+                        message,
+                        java.util.Map.of("type", type.name(), "relatedUserId", String.valueOf(relatedUser.getId()))
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send FCM notification: " + e.getMessage());
+        }
 
         return savedNotification;
     }

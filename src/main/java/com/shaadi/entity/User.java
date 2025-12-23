@@ -32,6 +32,7 @@ public class User {
     private String state;
     private String bio;
     private String photoUrl;
+    private String fcmToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

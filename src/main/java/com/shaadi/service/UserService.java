@@ -199,6 +199,13 @@ public class UserService {
         userRepo.save(user); // Cascades save to photo
     }
 
+    public void updateFcmToken(Integer userId, String token) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setFcmToken(token);
+        userRepo.save(user);
+    }
+
 
     public boolean isProfileComplete(User user) {
         return user.getAge() != null && user.getGender() != null &&
