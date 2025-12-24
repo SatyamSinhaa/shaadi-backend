@@ -25,81 +25,87 @@ public class ShaadiBackendApplication {
 		try {
 			System.out.println("🔥 Initializing Firebase in main method...");
 			if (FirebaseApp.getApps().isEmpty()) {
-				System.out.println("📄 Firebase not initialized yet, checking for service account file...");
+				System.out.println("📄 Checking for Firebase credentials...");
 
-				// Try multiple ways to load the file
-				InputStream serviceAccount = null;
+				FirebaseOptions options = null;
 
-				// Method 1: ClassPathResource
-				try {
-					ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
-					if (resource.exists()) {
-						serviceAccount = resource.getInputStream();
-						System.out.println("✅ firebase-service-account.json found via ClassPathResource");
+				// Method 1: Environment variable (recommended for production)
+				String serviceAccountJson = System.getenv("FIREBASE_SERVICE_ACCOUNT");
+				if (serviceAccountJson != null && !serviceAccountJson.isEmpty()) {
+					try {
+						InputStream serviceAccount = new java.io.ByteArrayInputStream(serviceAccountJson.getBytes());
+						options = FirebaseOptions.builder()
+								.setCredentials(GoogleCredentials.fromStream(serviceAccount))
+								.build();
+						System.out.println("✅ Firebase credentials loaded from FIREBASE_SERVICE_ACCOUNT environment variable");
+					} catch (Exception e) {
+						System.out.println("⚠️ Failed to load from FIREBASE_SERVICE_ACCOUNT: " + e.getMessage());
 					}
-				} catch (Exception e) {
-					System.out.println("⚠️ ClassPathResource failed: " + e.getMessage());
 				}
 
-				// Method 2: Direct file path (fallback)
-				if (serviceAccount == null) {
+				// Method 1b: Alternative environment variable name
+				if (options == null) {
+					String serviceAccountKey = System.getenv("FIREBASE_SERVICE_ACCOUNT_KEY");
+					if (serviceAccountKey != null && !serviceAccountKey.isEmpty()) {
+						try {
+							byte[] decodedKey = java.util.Base64.getDecoder().decode(serviceAccountKey);
+							InputStream serviceAccount = new java.io.ByteArrayInputStream(decodedKey);
+							options = FirebaseOptions.builder()
+									.setCredentials(GoogleCredentials.fromStream(serviceAccount))
+									.build();
+							System.out.println("✅ Firebase credentials loaded from FIREBASE_SERVICE_ACCOUNT_KEY environment variable");
+						} catch (Exception e) {
+							System.out.println("⚠️ Failed to decode FIREBASE_SERVICE_ACCOUNT_KEY: " + e.getMessage());
+						}
+					}
+				}
+
+				// Method 2: System property
+				if (options == null) {
+					String serviceAccountJsonProp = System.getProperty("firebase.service.account.json");
+					if (serviceAccountJsonProp != null && !serviceAccountJsonProp.isEmpty()) {
+						try {
+							InputStream serviceAccount = new java.io.ByteArrayInputStream(serviceAccountJsonProp.getBytes());
+							options = FirebaseOptions.builder()
+									.setCredentials(GoogleCredentials.fromStream(serviceAccount))
+									.build();
+							System.out.println("✅ Firebase credentials loaded from system property");
+						} catch (Exception e) {
+							System.out.println("⚠️ Failed to load from system property: " + e.getMessage());
+						}
+					}
+				}
+
+				// Method 3: File-based (fallback for development)
+				if (options == null) {
 					try {
-						java.io.File file = new java.io.File("src/main/resources/firebase-service-account.json");
-						if (file.exists()) {
-							serviceAccount = new java.io.FileInputStream(file);
-							System.out.println("✅ firebase-service-account.json found via direct file path");
+						ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+						if (resource.exists()) {
+							InputStream serviceAccount = resource.getInputStream();
+							options = FirebaseOptions.builder()
+									.setCredentials(GoogleCredentials.fromStream(serviceAccount))
+									.build();
+							System.out.println("✅ Firebase credentials loaded from classpath file");
 						}
 					} catch (Exception e) {
-						System.out.println("⚠️ Direct file path failed: " + e.getMessage());
+						System.out.println("⚠️ File-based loading failed: " + e.getMessage());
 					}
 				}
 
-				// Method 3: From classpath as stream (for JAR deployment)
-				if (serviceAccount == null) {
-					try {
-						serviceAccount = ShaadiBackendApplication.class.getClassLoader().getResourceAsStream("firebase-service-account.json");
-						if (serviceAccount != null) {
-							System.out.println("✅ firebase-service-account.json found via ClassLoader");
-						}
-					} catch (Exception e) {
-						System.out.println("⚠️ ClassLoader failed: " + e.getMessage());
-					}
-				}
-
-				// Method 4: Try BOOT-INF/classes path (Spring Boot JAR structure)
-				if (serviceAccount == null) {
-					try {
-						serviceAccount = ShaadiBackendApplication.class.getClassLoader().getResourceAsStream("BOOT-INF/classes/firebase-service-account.json");
-						if (serviceAccount != null) {
-							System.out.println("✅ firebase-service-account.json found via BOOT-INF/classes/ path");
-						}
-					} catch (Exception e) {
-						System.out.println("⚠️ BOOT-INF/classes path failed: " + e.getMessage());
-					}
-				}
-
-				if (serviceAccount != null) {
-					System.out.println("🔧 Building Firebase options...");
-					FirebaseOptions options = FirebaseOptions.builder()
-							.setCredentials(GoogleCredentials.fromStream(serviceAccount))
-							.build();
-
+				if (options != null) {
 					System.out.println("🚀 Initializing Firebase app...");
 					FirebaseApp.initializeApp(options);
-					System.out.println("🎉 Firebase Application Initialized successfully in main method!");
+					System.out.println("🎉 Firebase Application Initialized successfully!");
 					System.out.println("📱 Available Firebase apps: " + FirebaseApp.getApps().size());
-
-					serviceAccount.close();
 				} else {
-					System.err.println("❌ ERROR: firebase-service-account.json not found by any method. FCM will not work.");
-					System.err.println("💡 Make sure the file is in src/main/resources/ and is properly included in the JAR");
+					System.err.println("❌ ERROR: No Firebase credentials found. FCM will not work.");
+					System.err.println("💡 Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable with base64-encoded service account JSON");
+					System.err.println("💡 Or set firebase.service.account.json system property");
+					System.err.println("💡 Or ensure firebase-service-account.json is in classpath");
 				}
 			} else {
 				System.out.println("ℹ️ Firebase already initialized");
 			}
-		} catch (IOException e) {
-			System.err.println("❌ Error initializing Firebase: " + e.getMessage());
-			e.printStackTrace();
 		} catch (Exception e) {
 			System.err.println("❌ Unexpected error initializing Firebase: " + e.getMessage());
 			e.printStackTrace();
