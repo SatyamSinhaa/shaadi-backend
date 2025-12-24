@@ -200,10 +200,12 @@ public class UserService {
     }
 
     public void updateFcmToken(Integer userId, String token) {
+        System.out.println("💾 Updating FCM token for user " + userId + ": " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setFcmToken(token);
         userRepo.save(user);
+        System.out.println("✅ FCM token saved successfully for user " + userId);
     }
 
 

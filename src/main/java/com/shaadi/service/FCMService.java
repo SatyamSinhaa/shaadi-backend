@@ -12,11 +12,14 @@ public class FCMService {
 
     public void sendNotification(String token, String title, String body, Map<String, String> data) {
         if (token == null || token.isEmpty()) {
+            System.out.println("❌ FCM token is null or empty");
             return;
         }
 
         try {
-            Notification notification = Notification.builder()
+            System.out.println("🔥 Building FCM message for token: " + token.substring(0, Math.min(20, token.length())) + "...");
+
+            com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification.builder()
                     .setTitle(title)
                     .setBody(body)
                     .build();
@@ -27,12 +30,16 @@ public class FCMService {
 
             if (data != null && !data.isEmpty()) {
                 messageBuilder.putAllData(data);
+                System.out.println("📊 Adding data to message: " + data);
             }
 
-            String response = FirebaseMessaging.getInstance().send(messageBuilder.build());
-            System.out.println("Successfully sent message: " + response);
+            Message message = messageBuilder.build();
+            System.out.println("📨 Sending FCM message...");
+            String response = FirebaseMessaging.getInstance().send(message);
+            System.out.println("✅ Successfully sent FCM message: " + response);
         } catch (Exception e) {
-            System.err.println("Error sending FCM notification: " + e.getMessage());
+            System.err.println("❌ Error sending FCM notification: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

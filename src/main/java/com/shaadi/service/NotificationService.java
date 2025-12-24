@@ -44,7 +44,9 @@ public class NotificationService {
 
         // Send FCM Notification
         try {
+            System.out.println("🔔 Attempting to send FCM notification to user " + recipient.getId() + " (type: " + type + ")");
             if (recipient.getFcmToken() != null && !recipient.getFcmToken().isEmpty()) {
+                System.out.println("📱 FCM Token found: " + recipient.getFcmToken().substring(0, Math.min(20, recipient.getFcmToken().length())) + "...");
                 String title = "Shaadi App";
                 // Customize title based on type if needed
                 if (type == NotificationType.REQUEST_RECEIVED) {
@@ -52,16 +54,21 @@ public class NotificationService {
                 } else if (type == NotificationType.REQUEST_ACCEPTED) {
                     title = "It's a Match!";
                 }
-                
+
+                System.out.println("📤 Sending FCM notification: title='" + title + "', message='" + message + "'");
                 fcmService.sendNotification(
                         recipient.getFcmToken(),
                         title,
                         message,
                         java.util.Map.of("type", type.name(), "relatedUserId", String.valueOf(relatedUser.getId()))
                 );
+                System.out.println("✅ FCM notification sent successfully");
+            } else {
+                System.out.println("❌ No FCM token found for user " + recipient.getId());
             }
         } catch (Exception e) {
-            System.err.println("Failed to send FCM notification: " + e.getMessage());
+            System.err.println("❌ Failed to send FCM notification: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return savedNotification;
