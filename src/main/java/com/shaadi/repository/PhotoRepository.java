@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PhotoRepository extends JpaRepository<Photo, Integer> {
+public interface PhotoRepository extends JpaRepository<Photo, Long> {
     List<Photo> findByUser(User user);
     void deleteByUser(User user);
 }

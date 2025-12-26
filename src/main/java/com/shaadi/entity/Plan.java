@@ -10,7 +10,7 @@ import lombok.*;
 public class Plan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     private String name; // e.g., "Basic 1 Month", "Premium 3 Months"
     private Integer durationMonths; // e.g., 1 or 3

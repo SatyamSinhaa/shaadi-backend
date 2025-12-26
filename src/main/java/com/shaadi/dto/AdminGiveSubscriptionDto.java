@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminGiveSubscriptionDto {
-    private Integer userId;
-    private Integer planId;
+    private Long userId;
+    private Long planId;
     private Integer durationMonths; // Optional, defaults to plan's duration
 }

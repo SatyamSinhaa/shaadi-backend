@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SubscriptionRepository extends JpaRepository<Subscription, Integer> {
+public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
     List<Subscription> findByUserAndStatus(User user, SubscriptionStatus status);
     Optional<Subscription> findFirstByUserAndStatusOrderByExpiryDateDesc(User user, SubscriptionStatus status);
     List<Subscription> findByStatusAndExpiryDateBefore(SubscriptionStatus status, java.time.LocalDateTime expiryDate);
@@ -21,5 +21,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Inte
 
     @Modifying
     @Query("DELETE FROM Subscription s WHERE s.user.id = :userId")
-    void deleteByUserId(@Param("userId") Integer userId);
+    void deleteByUserId(@Param("userId") Long userId);
 }

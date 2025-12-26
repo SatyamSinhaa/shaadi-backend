@@ -36,7 +36,7 @@ public class ChatController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getMessages(@PathVariable int userId) {
+    public ResponseEntity<?> getMessages(@PathVariable Long userId) {
         try {
             Optional<User> userOpt = userRepo.findById(userId);
             if (userOpt.isEmpty()) {
@@ -50,7 +50,7 @@ public class ChatController {
     }
 
     @GetMapping("/message/{id}")
-    public ResponseEntity<?> getMessageById(@PathVariable int id) {
+    public ResponseEntity<?> getMessageById(@PathVariable Long id) {
         try {
             Optional<Message> messageOpt = chatService.findById(id);
             if (messageOpt.isPresent()) {
@@ -64,7 +64,7 @@ public class ChatController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMessage(@PathVariable int id) {
+    public ResponseEntity<?> deleteMessage(@PathVariable Long id) {
         try {
             Optional<Message> messageOpt = chatService.findById(id);
             if (messageOpt.isEmpty()) {
@@ -78,7 +78,7 @@ public class ChatController {
     }
 
     @PostMapping("/mark-read/{receiverId}/{senderId}")
-    public ResponseEntity<?> markMessagesAsRead(@PathVariable int receiverId, @PathVariable int senderId) {
+    public ResponseEntity<?> markMessagesAsRead(@PathVariable Long receiverId, @PathVariable Long senderId) {
         try {
             Optional<User> receiverOpt = userRepo.findById(receiverId);
             Optional<User> senderOpt = userRepo.findById(senderId);
@@ -93,10 +93,10 @@ public class ChatController {
     }
 
     @PostMapping("/request")
-    public ResponseEntity<?> sendChatRequest(@RequestBody Map<String, Integer> requestBody) {
+    public ResponseEntity<?> sendChatRequest(@RequestBody Map<String, Long> requestBody) {
         try {
-            Integer senderId = requestBody.get("senderId");
-            Integer receiverId = requestBody.get("receiverId");
+            Long senderId = requestBody.get("senderId");
+            Long receiverId = requestBody.get("receiverId");
             if (senderId == null || receiverId == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "senderId and receiverId are required"));
             }
@@ -110,7 +110,7 @@ public class ChatController {
     }
 
     @GetMapping("/requests/{userId}")
-    public ResponseEntity<?> getChatRequests(@PathVariable int userId) {
+    public ResponseEntity<?> getChatRequests(@PathVariable Long userId) {
         try {
             List<ChatRequest> requests = chatService.getAllRequestsForUser(userId);
             return ResponseEntity.ok(requests);

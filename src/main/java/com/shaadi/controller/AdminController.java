@@ -57,7 +57,7 @@ public class AdminController {
 
     @GetMapping("/users/{id}")
     @ResponseBody
-    public ResponseEntity<?> getUserById(@PathVariable Integer id) {
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
             Optional<User> userOpt = userService.findById(id);
             if (userOpt.isPresent()) {
@@ -71,13 +71,13 @@ public class AdminController {
     }
 
     @GetMapping("/users/{id}/edit")
-    public String editUserForm(@PathVariable Integer id, Model model) {
+    public String editUserForm(@PathVariable Long id, Model model) {
         userService.findById(id).ifPresent(user -> model.addAttribute("user", user));
         return "admin/user-edit";
     }
 
     @PostMapping("/users/{id}")
-    public String updateUser(@PathVariable Integer id, @ModelAttribute User user) {
+    public String updateUser(@PathVariable Long id, @ModelAttribute User user) {
         try {
             user.setId(id);
             userService.updateUser(user);
@@ -90,7 +90,7 @@ public class AdminController {
 
     @PostMapping("/users/{id}/delete")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {
         try {
             userService.deleteUser(id);
             Map<String, Object> response = Map.of(
@@ -188,7 +188,7 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> sendMessageToUser(@RequestBody Map<String, Object> payload) {
         try {
-            Integer receiverId = (Integer) payload.get("receiverId");
+            Long receiverId = (Long) payload.get("receiverId");
             String content = (String) payload.get("content");
 
             User receiver = userService.findById(receiverId)
@@ -216,7 +216,7 @@ public class AdminController {
 
     @GetMapping("/api/chat/messages/{userId}")
     @ResponseBody
-    public ResponseEntity<?> getMessagesForUser(@PathVariable Integer userId) {
+    public ResponseEntity<?> getMessagesForUser(@PathVariable Long userId) {
         try {
             User user = userService.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -253,13 +253,13 @@ public class AdminController {
     }
 
     @GetMapping("/plans/{id}/edit")
-    public String editPlanForm(@PathVariable Integer id, Model model) {
+    public String editPlanForm(@PathVariable Long id, Model model) {
         planService.getPlanById(id).ifPresent(plan -> model.addAttribute("plan", plan));
         return "admin/plan-form";
     }
 
     @PostMapping("/plans/{id}")
-    public String updatePlan(@PathVariable Integer id, @ModelAttribute Plan plan) {
+    public String updatePlan(@PathVariable Long id, @ModelAttribute Plan plan) {
         try {
             plan.setId(id);
             planService.savePlan(plan);
@@ -271,7 +271,7 @@ public class AdminController {
 
     @PostMapping("/plans/{id}/delete")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deletePlan(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> deletePlan(@PathVariable Long id) {
         try {
             planService.deletePlan(id);
             Map<String, Object> response = Map.of(
@@ -313,7 +313,7 @@ public class AdminController {
 
     @PutMapping("/api/plans/{id}")
     @ResponseBody
-    public ResponseEntity<?> updatePlanApi(@PathVariable Integer id, @RequestBody Plan plan) {
+    public ResponseEntity<?> updatePlanApi(@PathVariable Long id, @RequestBody Plan plan) {
         try {
             plan.setId(id);
             Plan updatedPlan = planService.savePlan(plan);
@@ -325,7 +325,7 @@ public class AdminController {
 
     @DeleteMapping("/api/plans/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deletePlanApi(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> deletePlanApi(@PathVariable Long id) {
         try {
             planService.deletePlan(id);
             Map<String, Object> response = Map.of(
@@ -345,7 +345,7 @@ public class AdminController {
     // Admin subscription management endpoints
     @PostMapping("/api/users/{id}/give-subscription")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> giveSubscription(@PathVariable Integer id, @RequestBody AdminGiveSubscriptionDto dto) {
+    public ResponseEntity<Map<String, Object>> giveSubscription(@PathVariable Long id, @RequestBody AdminGiveSubscriptionDto dto) {
         try {
             Subscription subscription = subscriptionService.giveSubscription(id, dto.getPlanId(), dto.getDurationMonths());
             Map<String, Object> response = Map.of(
@@ -371,7 +371,7 @@ public class AdminController {
 
     @PostMapping("/api/users/{id}/revoke-subscription")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> revokeSubscription(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> revokeSubscription(@PathVariable Long id) {
         try {
             subscriptionService.revokeSubscription(id);
             Map<String, Object> response = Map.of(

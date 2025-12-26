@@ -27,7 +27,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/subscription")
-    public ResponseEntity<?> getSubscription(@PathVariable Integer userId) {
+    public ResponseEntity<?> getSubscription(@PathVariable Long userId) {
         Optional<com.shaadi.dto.SubscriptionResponseDto> subscriptionDto = userService.getActiveSubscriptionDtoByUserId(userId);
         if (subscriptionDto.isPresent()) {
             return ResponseEntity.ok(subscriptionDto.get());
@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/subscription-history")
-    public ResponseEntity<List<SubscriptionResponseDto>> getSubscriptionHistory(@PathVariable Integer userId) {
+    public ResponseEntity<List<SubscriptionResponseDto>> getSubscriptionHistory(@PathVariable Long userId) {
         try {
             List<SubscriptionResponseDto> history = userService.getSubscriptionHistoryByUserId(userId);
             return ResponseEntity.ok(history);
@@ -77,7 +77,7 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<User>> all(
             @RequestParam(required = false) String gender,
-            @RequestParam(required = false) Integer currentUserId) {
+            @RequestParam(required = false) Long currentUserId) {
         try {
             return ResponseEntity.ok(userService.findAll(gender, currentUserId));
         } catch (Exception e) {
@@ -86,7 +86,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Integer id) {
+    public ResponseEntity<?> getById(@PathVariable Long id) {
         Optional<User> user = userService.findById(id);
         if (user.isPresent()) {
             return ResponseEntity.ok(user.get());
@@ -96,7 +96,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable int id, @RequestBody User user) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody User user) {
         try {
             user.setId(id); // ensures we update the correct user
             User updatedUser = userService.updateUser(user);
@@ -107,7 +107,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/photo")
-    public ResponseEntity<?> updateProfilePhoto(@PathVariable Integer userId, @RequestBody com.shaadi.dto.PhotoUpdateRequest request) {
+    public ResponseEntity<?> updateProfilePhoto(@PathVariable Long userId, @RequestBody com.shaadi.dto.PhotoUpdateRequest request) {
         try {
             userService.updateProfilePhoto(userId, request.getPhotoUrl());
             return ResponseEntity.ok(Map.of("message", "Photo updated successfully"));
@@ -117,7 +117,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/gallery")
-    public ResponseEntity<?> addPhotoToGallery(@PathVariable Integer userId, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> addPhotoToGallery(@PathVariable Long userId, @RequestBody Map<String, String> request) {
         try {
             String photoUrl = request.get("photoUrl");
             if (photoUrl == null || photoUrl.isBlank()) {
@@ -131,7 +131,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/fcm-token")
-    public ResponseEntity<?> updateFcmToken(@PathVariable Integer userId, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateFcmToken(@PathVariable Long userId, @RequestBody Map<String, String> request) {
         try {
             String token = request.get("token");
             if (token == null || token.isBlank()) {
@@ -154,7 +154,7 @@ public class UserController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String religion,
             @RequestParam(required = false) String gender,
-            @RequestParam Integer currentUserId) {
+            @RequestParam Long currentUserId) {
         try {
             return ResponseEntity.ok(userService.search(minAge, maxAge, name, location, religion, gender, currentUserId));
         } catch (Exception e) {
@@ -163,7 +163,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             userService.deleteUser(id);
             return ResponseEntity.noContent().build();
@@ -173,9 +173,8 @@ public class UserController {
     }
 
 
-
     @PostMapping("/{userId}/purchase-subscription")
-    public ResponseEntity<?> purchaseSubscription(@PathVariable Integer userId, @RequestBody PurchaseSubscriptionDto dto) {
+    public ResponseEntity<?> purchaseSubscription(@PathVariable Long userId, @RequestBody PurchaseSubscriptionDto dto) {
         try {
             Subscription subscription = userService.purchaseSubscription(userId, dto.getPlanId());
             return ResponseEntity.ok(subscription);
@@ -185,7 +184,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/favourites/{favouritedUserId}")
-    public ResponseEntity<?> addFavourite(@PathVariable Integer userId, @PathVariable Integer favouritedUserId) {
+    public ResponseEntity<?> addFavourite(@PathVariable Long userId, @PathVariable Long favouritedUserId) {
         try {
             userService.addFavourite(userId, favouritedUserId);
             return ResponseEntity.ok().build();
@@ -195,7 +194,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}/favourites/{favouritedUserId}")
-    public ResponseEntity<?> removeFavourite(@PathVariable Integer userId, @PathVariable Integer favouritedUserId) {
+    public ResponseEntity<?> removeFavourite(@PathVariable Long userId, @PathVariable Long favouritedUserId) {
         try {
             userService.removeFavourite(userId, favouritedUserId);
             return ResponseEntity.noContent().build();
@@ -205,7 +204,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/favourites")
-    public ResponseEntity<List<Favourite>> getFavourites(@PathVariable Integer userId) {
+    public ResponseEntity<List<Favourite>> getFavourites(@PathVariable Long userId) {
         try {
             return ResponseEntity.ok(userService.getFavourites(userId));
         } catch (Exception e) {
@@ -214,7 +213,7 @@ public class UserController {
     }
 
     @PostMapping("/{blockerId}/block/{blockedId}")
-    public ResponseEntity<?> blockUser(@PathVariable Integer blockerId, @PathVariable Integer blockedId) {
+    public ResponseEntity<?> blockUser(@PathVariable Long blockerId, @PathVariable Long blockedId) {
         try {
             userService.blockUser(blockerId, blockedId);
             return ResponseEntity.ok(Map.of("message", "User blocked successfully"));
@@ -224,7 +223,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{blockerId}/block/{blockedId}")
-    public ResponseEntity<?> unblockUser(@PathVariable Integer blockerId, @PathVariable Integer blockedId) {
+    public ResponseEntity<?> unblockUser(@PathVariable Long blockerId, @PathVariable Long blockedId) {
         try {
             userService.unblockUser(blockerId, blockedId);
             return ResponseEntity.ok(Map.of("message", "User unblocked successfully"));
@@ -234,7 +233,7 @@ public class UserController {
     }
 
     @GetMapping("/{blockerId}/blocked")
-    public ResponseEntity<List<Block>> getBlockedUsers(@PathVariable Integer blockerId) {
+    public ResponseEntity<List<Block>> getBlockedUsers(@PathVariable Long blockerId) {
         try {
             return ResponseEntity.ok(userService.getBlockedUsers(blockerId));
         } catch (Exception e) {

@@ -20,7 +20,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getNotifications(@PathVariable int userId) {
+    public ResponseEntity<?> getNotifications(@PathVariable Long userId) {
         try {
             List<Notification> notifications = notificationService.getNotificationsForUser(userId);
             return ResponseEntity.ok(notifications);
@@ -32,7 +32,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{userId}/unread")
-    public ResponseEntity<?> getUnreadNotifications(@PathVariable int userId) {
+    public ResponseEntity<?> getUnreadNotifications(@PathVariable Long userId) {
         try {
             List<Notification> notifications = notificationService.getUnreadNotificationsForUser(userId);
             return ResponseEntity.ok(notifications);
@@ -44,7 +44,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{userId}/unread/count")
-    public ResponseEntity<?> getUnreadNotificationCount(@PathVariable int userId) {
+    public ResponseEntity<?> getUnreadNotificationCount(@PathVariable Long userId) {
         try {
             long count = notificationService.getUnreadNotificationCount(userId);
             return ResponseEntity.ok(Map.of("count", count));

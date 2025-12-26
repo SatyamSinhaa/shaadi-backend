@@ -23,7 +23,7 @@ public class PlanService {
         return planRepository.findAll();
     }
 
-    public Optional<Plan> getPlanById(Integer id) {
+    public Optional<Plan> getPlanById(Long id) {
         return planRepository.findById(id);
     }
 
@@ -31,7 +31,7 @@ public class PlanService {
         return planRepository.save(plan);
     }
 
-    public void deletePlan(Integer id) {
+    public void deletePlan(Long id) {
         planRepository.deleteById(id);
     }
 }

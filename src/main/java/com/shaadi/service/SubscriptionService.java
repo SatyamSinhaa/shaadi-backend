@@ -53,7 +53,7 @@ public class SubscriptionService {
         return subscriptionRepo.findAll();
     }
 
-    public Subscription giveSubscription(Integer userId, Integer planId, Integer durationMonths) {
+    public Subscription giveSubscription(Long userId, Long planId, Integer durationMonths) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Plan plan = planRepo.findById(planId)
@@ -83,7 +83,7 @@ public class SubscriptionService {
         }
     }
 
-    public void revokeSubscription(Integer userId) {
+    public void revokeSubscription(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

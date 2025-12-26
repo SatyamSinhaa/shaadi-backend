@@ -74,13 +74,13 @@ public class NotificationService {
         return savedNotification;
     }
 
-    public List<Notification> getNotificationsForUser(int userId) {
+    public List<Notification> getNotificationsForUser(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return notificationRepo.findByRecipientOrderByCreatedAtDesc(user);
     }
 
-    public List<Notification> getUnreadNotificationsForUser(int userId) {
+    public List<Notification> getUnreadNotificationsForUser(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return notificationRepo.findByRecipientAndIsReadOrderByCreatedAtDesc(user, false);
@@ -94,7 +94,7 @@ public class NotificationService {
         notificationRepo.markAllAsRead(userId);
     }
 
-    public long getUnreadNotificationCount(int userId) {
+    public long getUnreadNotificationCount(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return notificationRepo.countByRecipientAndIsRead(user, false);

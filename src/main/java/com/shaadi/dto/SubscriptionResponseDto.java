@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionResponseDto {
-    private Integer subscriptionId;
-    private Integer userId;
-    private Integer planId;
+    private Long subscriptionId;
+    private Long userId;
+    private Long planId;
     private String planName;
     private Integer planDurationMonths;
     private Integer planChatLimit;

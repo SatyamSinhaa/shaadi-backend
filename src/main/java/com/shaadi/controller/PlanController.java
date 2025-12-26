@@ -51,7 +51,7 @@ public class PlanController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePlan(@PathVariable Integer id, @RequestBody Plan plan) {
+    public ResponseEntity<?> updatePlan(@PathVariable Long id, @RequestBody Plan plan) {
         Optional<Plan> existingPlan = planService.getPlanById(id);
         if (existingPlan.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Plan not found"));
@@ -66,7 +66,7 @@ public class PlanController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePlan(@PathVariable Integer id) {
+    public ResponseEntity<?> deletePlan(@PathVariable Long id) {
         Optional<Plan> existingPlan = planService.getPlanById(id);
         if (existingPlan.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Plan not found"));

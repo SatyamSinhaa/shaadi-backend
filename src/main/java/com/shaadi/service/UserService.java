@@ -42,7 +42,7 @@ public class UserService {
         this.blockRepo = blockRepo;
     }
 
-    public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Integer userId) {
+    public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Long userId) {
         Optional<User> userOpt = userRepo.findById(userId);
         if (userOpt.isEmpty()) {
             return Optional.empty();
@@ -68,7 +68,7 @@ public class UserService {
         });
     }
 
-    public List<SubscriptionResponseDto> getSubscriptionHistoryByUserId(Integer userId) {
+    public List<SubscriptionResponseDto> getSubscriptionHistoryByUserId(Long userId) {
         Optional<User> userOpt = userRepo.findById(userId);
         if (userOpt.isEmpty()) {
             return List.of();
@@ -125,7 +125,7 @@ public class UserService {
         return findAll(gender, null);
     }
 
-    public List<User> findAll(String gender, Integer currentUserId) {
+    public List<User> findAll(String gender, Long currentUserId) {
         List<User> users = userRepo.findAll().stream()
                 .filter(user -> gender == null || gender.isEmpty() ||
                         (user.getGender() != null && user.getGender().equalsIgnoreCase(gender)))
@@ -140,7 +140,7 @@ public class UserService {
         return users;
     }
 
-    public Optional<User> findById(Integer id) {
+    public Optional<User> findById(Long id) {
         return userRepo.findById(id);
     }
 
@@ -175,14 +175,14 @@ public class UserService {
         return userRepo.save(existing);
     }
 
-    public void updateProfilePhoto(Integer userId, String photoUrl) {
+    public void updateProfilePhoto(Long userId, String photoUrl) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setPhotoUrl(photoUrl);
         userRepo.save(user);
     }
 
-    public void addPhotoToGallery(Integer userId, String photoUrl) {
+    public void addPhotoToGallery(Long userId, String photoUrl) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         
@@ -199,7 +199,7 @@ public class UserService {
         userRepo.save(user); // Cascades save to photo
     }
 
-    public void updateFcmToken(Integer userId, String token) {
+    public void updateFcmToken(Long userId, String token) {
         System.out.println("💾 Updating FCM token for user " + userId + ": " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -218,7 +218,7 @@ public class UserService {
         return search(minAge, maxAge, name, location, religion, gender, null);
     }
 
-    public List<User> search(Integer minAge, Integer maxAge, String name, String location, String religion, String gender, Integer currentUserId) {
+    public List<User> search(Integer minAge, Integer maxAge, String name, String location, String religion, String gender, Long currentUserId) {
         Specification<User> spec = (root, query, cb) -> cb.conjunction();
 
         if (minAge != null && maxAge != null) {
@@ -256,7 +256,7 @@ public class UserService {
         return users;
     }
 
-    public void deleteUser(Integer id) {
+    public void deleteUser(Long id) {
         if (!userRepo.existsById(id)) {
             throw new IllegalArgumentException("User not found with id: " + id);
         }
@@ -271,7 +271,7 @@ public class UserService {
 
 
 
-    public Subscription purchaseSubscription(Integer userId, Integer planId) {
+    public Subscription purchaseSubscription(Long userId, Long planId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Plan plan = planRepo.findById(planId)
@@ -312,7 +312,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
 }
     }
 
-    public void addFavourite(Integer userId, Integer favouritedUserId) {
+    public void addFavourite(Long userId, Long favouritedUserId){
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         User favouritedUser = userRepo.findById(favouritedUserId)
@@ -333,7 +333,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         favouriteRepo.save(favourite);
     }
 
-    public void removeFavourite(Integer userId, Integer favouritedUserId) {
+    public void removeFavourite(Long userId, Long favouritedUserId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         User favouritedUser = userRepo.findById(favouritedUserId)
@@ -344,7 +344,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         favouriteRepo.delete(favourite);
     }
 
-    public List<Favourite> getFavourites(Integer userId) {
+    public List<Favourite> getFavourites(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<Favourite> favourites = favouriteRepo.findByUser(user);
@@ -356,7 +356,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
                 .toList();
     }
 
-    public void blockUser(Integer blockerId, Integer blockedId) {
+    public void blockUser(Long blockerId, Long blockedId) {
         User blocker = userRepo.findById(blockerId)
                 .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
         User blocked = userRepo.findById(blockedId)
@@ -381,7 +381,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         blockRepo.save(block);
     }
 
-    public void unblockUser(Integer blockerId, Integer blockedId) {
+    public void unblockUser(Long blockerId, Long blockedId) {
         User blocker = userRepo.findById(blockerId)
                 .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
         User blocked = userRepo.findById(blockedId)
@@ -392,13 +392,13 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         blockRepo.delete(block);
     }
 
-    public List<com.shaadi.entity.Block> getBlockedUsers(Integer blockerId) {
+    public List<com.shaadi.entity.Block> getBlockedUsers(Long blockerId) {
         User blocker = userRepo.findById(blockerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return blockRepo.findByBlocker(blocker);
     }
 
-    public boolean isBlocked(Integer blockerId, Integer blockedId) {
+    public boolean isBlocked(Long blockerId, Long blockedId) {
         User blocker = userRepo.findById(blockerId)
                 .orElseThrow(() -> new IllegalArgumentException("Blocker user not found"));
         User blocked = userRepo.findById(blockedId)

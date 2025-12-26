@@ -10,24 +10,24 @@ import com.shaadi.entity.User;
 
 import java.util.List;
 
-public interface MessageRepository extends JpaRepository<Message, Integer> {
+public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findBySenderOrReceiver(User sender, User receiver);
 
     @Query("SELECT DISTINCT CASE WHEN m.sender.id = :userId THEN m.receiver.id ELSE m.sender.id END FROM Message m WHERE m.sender.id = :userId OR m.receiver.id = :userId")
-    List<Integer> findDistinctChatPartnerIds(@Param("userId") Integer userId);
+    List<Long> findDistinctChatPartnerIds(@Param("userId") Long userId);
 
     @Modifying
     @Query("DELETE FROM Message m WHERE m.sender.id = :userId")
-    void deleteBySenderId(@Param("userId") Integer userId);
+    void deleteBySenderId(@Param("userId") Long userId);
 
     @Modifying
     @Query("DELETE FROM Message m WHERE m.receiver.id = :userId")
-    void deleteByReceiverId(@Param("userId") Integer userId);
+    void deleteByReceiverId(@Param("userId") Long userId);
 
     @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender LEFT JOIN FETCH m.receiver WHERE m.sender = :user OR m.receiver = :user")
     List<Message> findBySenderOrReceiverWithUsers(@Param("user") User user);
 
     @Modifying
     @Query("UPDATE Message m SET m.read = true WHERE m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.read = false")
-    void markAsRead(@Param("receiverId") Integer receiverId, @Param("senderId") Integer senderId);
+    void markAsRead(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
 }

@@ -69,7 +69,7 @@ public class ChatService {
         // Has active subscription, check plan chat limit
         Integer chatLimit = activeSub.get().getPlan().getChatLimit();
         if (chatLimit != null) {
-            List<Integer> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
+            List<Long> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
             if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
                 throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
             }
@@ -101,7 +101,7 @@ public class ChatService {
         return savedMessage;
     }
 
-    public Optional<Message> findById(int id) {
+    public Optional<Message> findById(Long id) {
         return messageRepo.findById(id);
     }
 
@@ -111,7 +111,7 @@ public class ChatService {
         // Filter out messages from/to blocked users
         return messages.stream()
                 .filter(message -> {
-                    Integer otherUserId = message.getSender().getId().equals(user.getId()) ?
+                    Long otherUserId = message.getSender().getId().equals(user.getId()) ?
                             message.getReceiver().getId() : message.getSender().getId();
                     return !userService.isBlocked(user.getId(), otherUserId) &&
                            !userService.isBlocked(otherUserId, user.getId());
@@ -119,7 +119,7 @@ public class ChatService {
                 .toList();
     }
 
-    public void deleteMessage(int id) {
+    public void deleteMessage(Long id) {
         messageRepo.deleteById(id);
     }
 
@@ -137,7 +137,7 @@ public class ChatService {
         messageRepo.markAsRead(receiver.getId(), sender.getId());
     }
 
-    public ChatRequest sendRequest(int senderId, int receiverId) {
+    public ChatRequest sendRequest(Long senderId, Long receiverId) {
         if (senderId == receiverId) {
             throw new IllegalArgumentException("Cannot send request to yourself");
         }
@@ -264,14 +264,14 @@ public class ChatService {
         chatRequestRepo.delete(request);
     }
 
-    public List<ChatRequest> getPendingRequestsForUser(int userId) {
+    public List<ChatRequest> getPendingRequestsForUser(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         return chatRequestRepo.findByReceiverAndStatus(user, ChatRequestStatus.PENDING);
     }
 
-    public List<ChatRequest> getAllRequestsForUser(int userId) {
+    public List<ChatRequest> getAllRequestsForUser(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -280,7 +280,7 @@ public class ChatService {
         // Filter out requests from/to blocked users
         return requests.stream()
                 .filter(request -> {
-                    Integer otherUserId = request.getSender().getId().equals(userId) ?
+                    Long otherUserId = request.getSender().getId().equals(userId) ?
                             request.getReceiver().getId() : request.getSender().getId();
                     return !userService.isBlocked(userId, otherUserId) &&
                            !userService.isBlocked(otherUserId, userId);
@@ -288,7 +288,7 @@ public class ChatService {
                 .toList();
     }
 
-    public boolean canChat(int userId1, int userId2) {
+    public boolean canChat(Long userId1, Long userId2) {
         User user1 = userRepo.findById(userId1)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         User user2 = userRepo.findById(userId2)
