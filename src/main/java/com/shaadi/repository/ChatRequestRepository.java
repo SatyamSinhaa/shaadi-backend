@@ -1,6 +1,7 @@
 package com.shaadi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,4 +29,12 @@ public interface ChatRequestRepository extends JpaRepository<ChatRequest, Long> 
 
     @Query("SELECT cr FROM ChatRequest cr WHERE (cr.sender.id = :userId1 AND cr.receiver.id = :userId2) OR (cr.sender.id = :userId2 AND cr.receiver.id = :userId1)")
     List<ChatRequest> findRequestsBetweenUsersByIds(@Param("userId1") int userId1, @Param("userId2") int userId2);
+
+    @Modifying
+    @Query("DELETE FROM ChatRequest cr WHERE cr.sender.id = :userId")
+    void deleteBySenderId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM ChatRequest cr WHERE cr.receiver.id = :userId")
+    void deleteByReceiverId(@Param("userId") Long userId);
 }

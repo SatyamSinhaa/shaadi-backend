@@ -1,6 +1,7 @@
 package com.shaadi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,4 +19,12 @@ public interface FavouriteRepository extends JpaRepository<Favourite, Long> {
 
     @Query("SELECT f FROM Favourite f JOIN FETCH f.favouritedUser WHERE f.user = :user")
     List<Favourite> findFavouritedUsersByUser(@Param("user") User user);
+
+    @Modifying
+    @Query("DELETE FROM Favourite f WHERE f.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM Favourite f WHERE f.favouritedUser.id = :userId")
+    void deleteByFavouritedUserId(@Param("userId") Long userId);
 }

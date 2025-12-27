@@ -1,6 +1,7 @@
 package com.shaadi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,4 +22,12 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 
     @Query("SELECT COUNT(b) > 0 FROM Block b WHERE b.blocker = :blocker AND b.blocked = :blocked")
     boolean existsByBlockerAndBlocked(@Param("blocker") User blocker, @Param("blocked") User blocked);
+
+    @Modifying
+    @Query("DELETE FROM Block b WHERE b.blocker.id = :userId")
+    void deleteByBlockerId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM Block b WHERE b.blocked.id = :userId")
+    void deleteByBlockedId(@Param("userId") Long userId);
 }

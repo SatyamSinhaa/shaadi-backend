@@ -30,4 +30,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Modifying
     @Query("UPDATE Message m SET m.read = true WHERE m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.read = false")
     void markAsRead(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
+
+    @Query("SELECT COUNT(m) > 0 FROM Message m WHERE (m.sender.id = :userId AND m.receiver.id = :otherId) OR (m.sender.id = :otherId AND m.receiver.id = :userId)")
+    boolean hasConversationBetween(@Param("userId") Long userId, @Param("otherId") Long otherId);
 }

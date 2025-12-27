@@ -37,6 +37,9 @@ public class SubscriptionService {
         List<Subscription> expiredSubs = subscriptionRepo.findByStatusAndExpiryDateBefore(SubscriptionStatus.ACTIVE, LocalDateTime.now());
         for (Subscription sub : expiredSubs) {
             sub.setStatus(SubscriptionStatus.EXPIRED);
+            // Reset chat slots when subscription expires
+            sub.setUsedChatSlots(0);
+            sub.setChatLimit(0);
             subscriptionRepo.save(sub);
             // Remove excess photos when subscription expires
             removeExcessPhotos(sub.getUser());
@@ -79,6 +82,8 @@ public class SubscriptionService {
             subscription.setStartDate(now);
             subscription.setExpiryDate(expiry);
             subscription.setStatus(SubscriptionStatus.ACTIVE);
+            subscription.setChatLimit(plan.getChatLimit());
+            subscription.setUsedChatSlots(0);
             return subscriptionRepo.save(subscription);
         }
     }
@@ -90,6 +95,9 @@ public class SubscriptionService {
         List<Subscription> activeSubscriptions = subscriptionRepo.findByUserAndStatus(user, SubscriptionStatus.ACTIVE);
         for (Subscription sub : activeSubscriptions) {
             sub.setStatus(SubscriptionStatus.EXPIRED);
+            // Reset chat slots when subscription is revoked
+            sub.setUsedChatSlots(0);
+            sub.setChatLimit(0);
             subscriptionRepo.save(sub);
             // Remove excess photos when subscription is revoked
             removeExcessPhotos(user);

@@ -33,5 +33,6 @@ public class Subscription {
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
 
-    private Integer chatLimit; // Total chat limit for this subscription
+    private Integer chatLimit; // Total allocated chat slots for this subscription
+    private Integer usedChatSlots = 0; // Number of chat slots consumed
 }

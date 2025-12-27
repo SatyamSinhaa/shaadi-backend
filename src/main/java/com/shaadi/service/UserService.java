@@ -11,8 +11,10 @@ import com.shaadi.entity.Subscription;
 import com.shaadi.entity.SubscriptionStatus;
 import com.shaadi.entity.User;
 import com.shaadi.repository.BlockRepository;
+import com.shaadi.repository.ChatRequestRepository;
 import com.shaadi.repository.FavouriteRepository;
 import com.shaadi.repository.MessageRepository;
+import com.shaadi.repository.NotificationRepository;
 import com.shaadi.repository.PlanRepository;
 import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
@@ -32,14 +34,18 @@ public class UserService {
     private final MessageRepository messageRepo;
     private final FavouriteRepository favouriteRepo;
     private final BlockRepository blockRepo;
+    private final ChatRequestRepository chatRequestRepo;
+    private final NotificationRepository notificationRepo;
 
-    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, BlockRepository blockRepo) {
+    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, BlockRepository blockRepo, ChatRequestRepository chatRequestRepo, NotificationRepository notificationRepo) {
         this.userRepo = userRepo;
         this.planRepo = planRepo;
         this.subscriptionRepo = subscriptionRepo;
         this.messageRepo = messageRepo;
         this.favouriteRepo = favouriteRepo;
         this.blockRepo = blockRepo;
+        this.chatRequestRepo = chatRequestRepo;
+        this.notificationRepo = notificationRepo;
     }
 
     public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Long userId) {
@@ -260,12 +266,33 @@ public class UserService {
         if (!userRepo.existsById(id)) {
             throw new IllegalArgumentException("User not found with id: " + id);
         }
-        // Delete associated messages first to avoid foreign key constraint violations
+
+        // Delete associated records in correct order to avoid foreign key violations
+
+        // Delete favourites (both directions)
+        favouriteRepo.deleteByUserId(id);
+        favouriteRepo.deleteByFavouritedUserId(id);
+
+        // Delete blocks (both directions)
+        blockRepo.deleteByBlockerId(id);
+        blockRepo.deleteByBlockedId(id);
+
+        // Delete chat requests (both directions)
+        chatRequestRepo.deleteBySenderId(id);
+        chatRequestRepo.deleteByReceiverId(id);
+
+        // Delete notifications (both directions)
+        notificationRepo.deleteByRecipientId(id);
+        notificationRepo.deleteByRelatedUserId(id);
+
+        // Delete messages (both directions)
         messageRepo.deleteBySenderId(id);
         messageRepo.deleteByReceiverId(id);
-        // Delete associated subscriptions
+
+        // Delete subscriptions
         subscriptionRepo.deleteByUserId(id);
-        // Now delete the user
+
+        // Finally delete the user (photos and remaining subscriptions will be deleted via cascade)
         userRepo.deleteById(id);
     }
 
@@ -293,8 +320,18 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
 } else {
     // Regular plan: extend expiry or create new
     if (existingActive.isPresent() && existingActive.get().getExpiryDate().isAfter(now)) {
-        // Extend the existing subscription
+        // Extend the existing subscription with slot rollover
         Subscription existing = existingActive.get();
+
+        // Calculate remaining slots
+        Integer currentUsed = existing.getUsedChatSlots() != null ? existing.getUsedChatSlots() : 0;
+        Integer currentTotal = existing.getChatLimit() != null ? existing.getChatLimit() : 0;
+        Integer remainingSlots = Math.max(0, currentTotal - currentUsed);
+
+        // Set new total (rollover remaining + new plan limit)
+        existing.setChatLimit(remainingSlots + plan.getChatLimit());
+
+        // Extend expiry
         existing.setExpiryDate(existing.getExpiryDate().plusMonths(plan.getDurationMonths()));
         return subscriptionRepo.save(existing);
     } else {
@@ -307,6 +344,7 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
         subscription.setExpiryDate(expiry);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscription.setChatLimit(plan.getChatLimit());
+        subscription.setUsedChatSlots(0);
         return subscriptionRepo.save(subscription);
     }
 }

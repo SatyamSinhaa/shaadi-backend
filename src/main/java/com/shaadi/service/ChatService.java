@@ -66,12 +66,21 @@ public class ChatService {
         if (activeSub.isEmpty() || activeSub.get().getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Active subscription required to chat");
         }
-        // Has active subscription, check plan chat limit
-        Integer chatLimit = activeSub.get().getPlan().getChatLimit();
-        if (chatLimit != null) {
-            List<Long> chatPartnerIds = messageRepo.findDistinctChatPartnerIds(sender.getId());
-            if (chatPartnerIds.size() >= chatLimit && !chatPartnerIds.contains(receiver.getId())) {
-                throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
+
+        // Check chat limit using slot-based system
+        Subscription subscription = activeSub.get();
+        Integer totalSlots = subscription.getChatLimit();
+        if (totalSlots != null && totalSlots > 0) {
+            // Check if this is a new conversation for the sender
+            boolean isNewConversation = !messageRepo.hasConversationBetween(sender.getId(), receiver.getId());
+            if (isNewConversation) {
+                Integer usedSlots = subscription.getUsedChatSlots() != null ? subscription.getUsedChatSlots() : 0;
+                if (usedSlots >= totalSlots) {
+                    throw new IllegalStateException("Chat limit reached for your plan. Upgrade to chat with more users.");
+                }
+                // Consume a chat slot
+                subscription.setUsedChatSlots(usedSlots + 1);
+                subscriptionRepo.save(subscription);
             }
         }
 
