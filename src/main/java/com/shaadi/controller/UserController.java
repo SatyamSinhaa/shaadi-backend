@@ -75,7 +75,20 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> all(
+    public ResponseEntity<?> all(
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) Long currentUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            return ResponseEntity.ok(userService.findAllPaginated(gender, currentUserId, page, size));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch users"));
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<User>> allUsers(
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) Long currentUserId) {
         try {
@@ -147,18 +160,20 @@ public class UserController {
 
 
     @GetMapping("/search")
-    public ResponseEntity<List<User>> search(
+    public ResponseEntity<?> search(
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String religion,
             @RequestParam(required = false) String gender,
-            @RequestParam Long currentUserId) {
+            @RequestParam Long currentUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            return ResponseEntity.ok(userService.search(minAge, maxAge, name, location, religion, gender, currentUserId));
+            return ResponseEntity.ok(userService.searchPaginated(minAge, maxAge, name, location, religion, gender, currentUserId, page, size));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(List.of());
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to search users"));
         }
     }
 

@@ -24,6 +24,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import com.shaadi.dto.PaginatedUserResponse;
+import com.shaadi.dto.SimplePage;
 
 @Service
 @Transactional
@@ -146,6 +151,34 @@ public class UserService {
         return users;
     }
 
+    public PaginatedUserResponse findAllPaginated(String gender, Long currentUserId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        // For simplicity, we'll filter in memory since the dataset is manageable
+        // In production, you'd want custom repository methods with JPA criteria
+        List<User> allUsers = userRepo.findAll().stream()
+                .filter(user -> gender == null || gender.isEmpty() ||
+                        (user.getGender() != null && user.getGender().equalsIgnoreCase(gender)))
+                .toList();
+
+        if (currentUserId != null) {
+            allUsers = allUsers.stream()
+                    .filter(user -> !isBlocked(currentUserId, user.getId()) && !isBlocked(user.getId(), currentUserId))
+                    .toList();
+        }
+
+        // Manual pagination
+        int totalElements = allUsers.size();
+        int start = page * size;
+        int end = Math.min(start + size, totalElements);
+
+        List<User> pageContent = start < totalElements ? allUsers.subList(start, end) : List.of();
+
+        // Create a simple Page-like object for our response
+        SimplePage<User> simplePage = new SimplePage<>(pageContent, pageable, totalElements);
+        return new PaginatedUserResponse(simplePage);
+    }
+
     public Optional<User> findById(Long id) {
         return userRepo.findById(id);
     }
@@ -260,6 +293,24 @@ public class UserService {
         }
 
         return users;
+    }
+
+    public PaginatedUserResponse searchPaginated(Integer minAge, Integer maxAge, String name, String location, String religion, String gender, Long currentUserId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Get filtered results (same logic as search method)
+        List<User> filteredUsers = search(minAge, maxAge, name, location, religion, gender, currentUserId);
+
+        // Manual pagination
+        int totalElements = filteredUsers.size();
+        int start = page * size;
+        int end = Math.min(start + size, totalElements);
+
+        List<User> pageContent = start < totalElements ? filteredUsers.subList(start, end) : List.of();
+
+        // Create a simple Page-like object for our response
+        SimplePage<User> simplePage = new SimplePage<>(pageContent, pageable, totalElements);
+        return new PaginatedUserResponse(simplePage);
     }
 
     public void deleteUser(Long id) {
