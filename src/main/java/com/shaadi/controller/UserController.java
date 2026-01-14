@@ -74,6 +74,26 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @PostMapping("/firebase-login")
+    public ResponseEntity<?> firebaseLogin(@RequestBody Map<String, String> request) {
+        try {
+            String idToken = request.get("idToken");
+            if (idToken == null || idToken.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "ID token is required"));
+            }
+            User user = userService.loginWithFirebase(idToken);
+            return ResponseEntity.ok(user);
+        } catch (IllegalArgumentException e) {
+            // Handle USER_NOT_FOUND specifically
+            if ("USER_NOT_FOUND".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "USER_NOT_FOUND"));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Firebase authentication failed: " + e.getMessage()));
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<User>> all(
             @RequestParam(required = false) String gender,

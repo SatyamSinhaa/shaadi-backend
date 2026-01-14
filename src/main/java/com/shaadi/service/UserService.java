@@ -1,5 +1,8 @@
 package com.shaadi.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
@@ -101,21 +104,36 @@ public class UserService {
     }
 
     public User register(User user) {
-        // basic check: avoid duplicate email
-        Optional<User> existing = userRepo.findByEmail(user.getEmail());
-        if (existing.isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
+        System.out.println("🔥 Starting user registration for: " + user.getEmail());
+        try {
+            // basic check: avoid duplicate email
+            Optional<User> existing = userRepo.findByEmail(user.getEmail());
+            if (existing.isPresent()) {
+                System.out.println("❌ Email already registered: " + user.getEmail());
+                throw new IllegalArgumentException("Email already registered");
+            }
+
+            // Set default role to USER if not set
+            if (user.getRole() == null) {
+                user.setRole(Role.USER);
+            }
+
+            // Capitalize gender
+            if (user.getGender() != null) {
+                user.setGender(capitalize(user.getGender()));
+                System.out.println("✅ Gender set to: " + user.getGender());
+            }
+
+            // Profile fields are null on registration
+            System.out.println("💾 Saving user to database...");
+            User savedUser = userRepo.save(user);
+            System.out.println("✅ User registered successfully with ID: " + savedUser.getId());
+            return savedUser;
+        } catch (Exception e) {
+            System.err.println("❌ Registration failed for " + user.getEmail() + ": " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        // Set default role to USER if not set
-        if (user.getRole() == null) {
-            user.setRole(Role.USER);
-        }
-        // Capitalize gender
-        if (user.getGender() != null) {
-            user.setGender(capitalize(user.getGender()));
-        }
-        // Profile fields are null on registration
-        return userRepo.save(user);
     }
 
     public Optional<User> findByEmail(String email) {
@@ -125,6 +143,47 @@ public class UserService {
     public Optional<User> login(String email, String password) {
         return userRepo.findByEmail(email)
                 .filter(u -> u.getPassword() != null && u.getPassword().equals(password));
+    }
+
+    public User loginWithFirebase(String idToken) throws FirebaseAuthException {
+        System.out.println("🔥 Starting Firebase token verification...");
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String firebaseUid = decodedToken.getUid();
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+
+            System.out.println("✅ Firebase token verified for UID: " + firebaseUid + ", email: " + email);
+
+            // Check if user already exists with this Firebase UID
+            Optional<User> existingUser = userRepo.findByFirebaseUid(firebaseUid);
+            if (existingUser.isPresent()) {
+                System.out.println("✅ Found existing user with Firebase UID: " + firebaseUid);
+                return existingUser.get();
+            }
+
+            // Check if user exists with same email but different auth method
+            if (email != null) {
+                Optional<User> emailUser = userRepo.findByEmail(email);
+                if (emailUser.isPresent()) {
+                    User user = emailUser.get();
+                    System.out.println("🔗 Linking Firebase UID to existing user: " + email);
+                    // Link Firebase UID to existing user
+                    user.setFirebaseUid(firebaseUid);
+                    return userRepo.save(user);
+                }
+            }
+
+            // Don't auto-create user - throw exception to indicate user needs to register
+            System.out.println("❌ User not found, needs registration: " + name + " (" + email + ")");
+            throw new IllegalArgumentException("USER_NOT_FOUND");
+        } catch (FirebaseAuthException e) {
+            System.err.println("❌ Firebase token verification failed: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            System.err.println("❌ Unexpected error in Firebase login: " + e.getMessage());
+            throw new RuntimeException("Firebase authentication failed: " + e.getMessage());
+        }
     }
 
     public List<User> findAll(String gender) {
@@ -162,6 +221,7 @@ public class UserService {
         // Preserve password and role - don't allow updating these via this endpoint
         existing.setName(user.getName());
         existing.setEmail(user.getEmail());
+        existing.setFirebaseUid(user.getFirebaseUid()); // Add Firebase UID update
         existing.setAge(user.getAge());
         if (user.getGender() != null) {
             existing.setGender(capitalize(user.getGender()));

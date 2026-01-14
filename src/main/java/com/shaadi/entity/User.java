@@ -19,6 +19,7 @@ public class User {
     private String email;
     @JsonIgnore
     private String password;
+    private String firebaseUid;
 
     // Profile fields (nullable for admins)
     private Integer age;
@@ -33,6 +34,7 @@ public class User {
     private String bio;
     private String photoUrl;
     private String fcmToken;
+    private Boolean isProfileComplete = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
