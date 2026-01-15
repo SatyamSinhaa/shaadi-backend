@@ -54,7 +54,7 @@ public class UserController {
         try {
             User user = new User();
             user.setEmail(registrationDto.getEmail());
-            user.setPassword(registrationDto.getPassword());
+            user.setMobileNumber(registrationDto.getMobileNumber());
             user.setName(registrationDto.getName());
             user.setGender(registrationDto.getGender());
             User savedUser = userService.register(user);
@@ -64,18 +64,18 @@ public class UserController {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
-        Optional<User> userOpt = userService.findByEmail(loginDto.getEmail());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Email not exist"));
-        }
-        User user = userOpt.get();
-        if (!user.getPassword().equals(loginDto.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong password"));
-        }
-        return ResponseEntity.ok(user);
-    }
+    // @PostMapping("/login")
+    // public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
+    //     Optional<User> userOpt = userService.findByEmail(loginDto.getEmail());
+    //     if (userOpt.isEmpty()) {
+    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Email not exist"));
+    //     }
+    //     User user = userOpt.get();
+    //     if (!user.getPassword().equals(loginDto.getPassword())) {
+    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong password"));
+    //     }
+    //     return ResponseEntity.ok(user);
+    // }
 
     @PostMapping("/firebase-login")
     public ResponseEntity<?> firebaseLogin(@RequestBody Map<String, String> request) {

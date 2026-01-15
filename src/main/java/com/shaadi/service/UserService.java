@@ -115,6 +115,14 @@ public class UserService {
                 System.out.println("❌ Email already registered: " + user.getEmail());
                 throw new IllegalArgumentException("Email already registered");
             }
+            // basic check: avoid duplicate mobile number
+            if (user.getMobileNumber() != null) {
+                Optional<User> existingMobile = userRepo.findByMobileNumber(user.getMobileNumber());
+                if (existingMobile.isPresent()) {
+                    System.out.println("❌ Mobile number already registered: " + user.getMobileNumber());
+                    throw new IllegalArgumentException("Mobile number already registered");
+                }
+            }
 
             // Set default role to USER if not set
             if (user.getRole() == null) {
@@ -143,10 +151,10 @@ public class UserService {
         return userRepo.findByEmail(email);
     }
 
-    public Optional<User> login(String email, String password) {
-        return userRepo.findByEmail(email)
-                .filter(u -> u.getPassword() != null && u.getPassword().equals(password));
-    }
+    // public Optional<User> login(String email, String password) {
+    //     return userRepo.findByEmail(email)
+    //             .filter(u -> u.getPassword() != null && u.getPassword().equals(password));
+    // }
 
     public User loginWithFirebase(String idToken) throws FirebaseAuthException {
         System.out.println("🔥 Starting Firebase token verification...");

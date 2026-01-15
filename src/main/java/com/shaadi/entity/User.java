@@ -2,6 +2,8 @@ package com.shaadi.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -17,10 +19,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(unique = true, nullable = false)
     private String email;
-    @JsonIgnore
-    private String password;
+    // @JsonIgnore
+    // private String password;
+    @Column(unique = true)
     private String firebaseUid;
+    @Column(unique = true)
+    @Size(min = 10, max = 10, message = "Mobile number must be exactly 10 digits")
+    @Pattern(regexp = "\\d{10}", message = "Mobile number must contain only digits")
+    private String mobileNumber;
 
     // Personal Details
     private Integer age;
