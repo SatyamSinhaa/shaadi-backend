@@ -98,11 +98,20 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> all(
+    public ResponseEntity<?> all(
             @RequestParam(required = false) String gender,
-            @RequestParam(required = false) Long currentUserId) {
+            @RequestParam(required = false) Long currentUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            return ResponseEntity.ok(userService.findAll(gender, currentUserId));
+            org.springframework.data.domain.Page<User> userPage = userService.findAll(gender, currentUserId,
+                org.springframework.data.domain.PageRequest.of(page, size));
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(userPage.getTotalElements()))
+                .header("X-Total-Pages", String.valueOf(userPage.getTotalPages()))
+                .header("X-Current-Page", String.valueOf(userPage.getNumber()))
+                .header("X-Page-Size", String.valueOf(userPage.getSize()))
+                .body(userPage.getContent());
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
         }

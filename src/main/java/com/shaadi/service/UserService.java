@@ -6,6 +6,9 @@ import com.google.firebase.auth.FirebaseToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.shaadi.entity.Favourite;
 import com.shaadi.entity.Plan;
@@ -202,15 +205,25 @@ public class UserService {
     }
 
     public List<User> findAll(String gender, Long currentUserId) {
-        List<User> users = userRepo.findAll().stream()
-                .filter(user -> gender == null || gender.isEmpty() ||
-                        (user.getGender() != null && user.getGender().equalsIgnoreCase(gender)))
-                .toList();
+        Page<User> page = findAll(gender, currentUserId, PageRequest.of(0, Integer.MAX_VALUE));
+        return page.getContent();
+    }
+
+    public Page<User> findAll(String gender, Long currentUserId, Pageable pageable) {
+        Specification<User> spec = (root, query, cb) -> cb.conjunction();
+
+        if (gender != null && !gender.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                cb.equal(cb.lower(root.get("gender")), gender.toLowerCase()));
+        }
+
+        Page<User> users = userRepo.findAll(spec, pageable);
 
         if (currentUserId != null) {
-            users = users.stream()
+            List<User> filteredUsers = users.getContent().stream()
                     .filter(user -> !isBlocked(currentUserId, user.getId()) && !isBlocked(user.getId(), currentUserId))
                     .toList();
+            return new org.springframework.data.domain.PageImpl<>(filteredUsers, pageable, filteredUsers.size());
         }
 
         return users;
