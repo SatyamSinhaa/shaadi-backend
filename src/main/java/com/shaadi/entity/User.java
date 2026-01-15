@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -21,16 +22,46 @@ public class User {
     private String password;
     private String firebaseUid;
 
-    // Profile fields (nullable for admins)
+    // Personal Details
     private Integer age;
     private String gender;
+    private String maritalStatus;
+    private Boolean manglik;
+    private LocalDate dateOfBirth;
+    private Integer height;
+    private Integer weightKg;
+    private String rashi;
     private String gotr;
     private String caste;
     private String category;
     private String religion;
+    private String profession;
+    private String education;
+    private Long annualIncome;
+    private String motherTongue;
+
+    // Location
     private String cityTown;
     private String district;
     private String state;
+
+    // Family Details
+    private String fatherName;
+    private String fatherOccupation;
+    private String motherName;
+    private String motherOccupation;
+    private Integer numberOfBrothers;
+    private Integer numberOfSisters;
+    private String familyType;
+    private String familyLocations;
+    private String property;
+
+    // Lifestyle
+    private String diet;
+    private Boolean smoking;
+    private Boolean drinking;
+
+    // Other Profile Fields
     private String bio;
     private String photoUrl;
     private String fcmToken;
@@ -43,7 +74,6 @@ public class User {
     // Photo gallery
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Photo> photos;
-
 
 
     // Subscription relationship

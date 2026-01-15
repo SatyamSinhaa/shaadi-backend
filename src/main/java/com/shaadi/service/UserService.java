@@ -231,13 +231,44 @@ public class UserService {
         } else {
             existing.setGender(user.getGender());
         }
+        
+        // Personal Details
+        existing.setMaritalStatus(user.getMaritalStatus());
+        existing.setManglik(user.getManglik());
+        existing.setDateOfBirth(user.getDateOfBirth());
+        existing.setHeight(user.getHeight());
+        existing.setWeightKg(user.getWeightKg());
+        existing.setRashi(user.getRashi());
         existing.setGotr(user.getGotr());
         existing.setCaste(user.getCaste());
         existing.setCategory(user.getCategory());
         existing.setReligion(user.getReligion());
+        existing.setProfession(user.getProfession());
+        existing.setEducation(user.getEducation());
+        existing.setAnnualIncome(user.getAnnualIncome());
+        existing.setMotherTongue(user.getMotherTongue());
+
+        // Location
         existing.setCityTown(user.getCityTown());
         existing.setDistrict(user.getDistrict());
         existing.setState(user.getState());
+
+        // Family Details
+        existing.setFatherName(user.getFatherName());
+        existing.setFatherOccupation(user.getFatherOccupation());
+        existing.setMotherName(user.getMotherName());
+        existing.setMotherOccupation(user.getMotherOccupation());
+        existing.setNumberOfBrothers(user.getNumberOfBrothers());
+        existing.setNumberOfSisters(user.getNumberOfSisters());
+        existing.setFamilyType(user.getFamilyType());
+        existing.setFamilyLocations(user.getFamilyLocations());
+        existing.setProperty(user.getProperty());
+
+        // Lifestyle
+        existing.setDiet(user.getDiet());
+        existing.setSmoking(user.getSmoking());
+        existing.setDrinking(user.getDrinking());
+
         existing.setBio(user.getBio());
         existing.setPhotoUrl(user.getPhotoUrl());
 
