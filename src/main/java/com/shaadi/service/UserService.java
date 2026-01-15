@@ -22,6 +22,7 @@ import com.shaadi.repository.PlanRepository;
 import com.shaadi.repository.SubscriptionRepository;
 import com.shaadi.repository.UserRepository;
 import com.shaadi.dto.SubscriptionResponseDto;
+import com.shaadi.service.CloudflareR2Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,8 +40,9 @@ public class UserService {
     private final BlockRepository blockRepo;
     private final ChatRequestRepository chatRequestRepo;
     private final NotificationRepository notificationRepo;
+    private final CloudflareR2Service cloudflareR2Service;
 
-    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, BlockRepository blockRepo, ChatRequestRepository chatRequestRepo, NotificationRepository notificationRepo) {
+    public UserService(UserRepository userRepo, PlanRepository planRepo, SubscriptionRepository subscriptionRepo, MessageRepository messageRepo, FavouriteRepository favouriteRepo, BlockRepository blockRepo, ChatRequestRepository chatRequestRepo, NotificationRepository notificationRepo, CloudflareR2Service cloudflareR2Service) {
         this.userRepo = userRepo;
         this.planRepo = planRepo;
         this.subscriptionRepo = subscriptionRepo;
@@ -49,6 +51,7 @@ public class UserService {
         this.blockRepo = blockRepo;
         this.chatRequestRepo = chatRequestRepo;
         this.notificationRepo = notificationRepo;
+        this.cloudflareR2Service = cloudflareR2Service;
     }
 
     public Optional<SubscriptionResponseDto> getActiveSubscriptionDtoByUserId(Long userId) {
@@ -244,8 +247,30 @@ public class UserService {
     public void updateProfilePhoto(Long userId, String photoUrl) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Get the old photo URL before updating
+        String oldPhotoUrl = user.getPhotoUrl();
+
+        // Update the photo URL in database
         user.setPhotoUrl(photoUrl);
         userRepo.save(user);
+
+        // Delete old photo from Cloudflare R2 if it exists and is different from new URL
+        if (oldPhotoUrl != null && !oldPhotoUrl.equals(photoUrl) && !oldPhotoUrl.isBlank()) {
+            try {
+                String oldFileName = extractFileNameFromUrl(oldPhotoUrl);
+                if (oldFileName != null) {
+                    System.out.println("Deleting old profile photo: " + oldFileName);
+                    cloudflareR2Service.deleteFile(oldFileName);
+                    System.out.println("Successfully deleted old profile photo: " + oldFileName);
+                } else {
+                    System.out.println("Could not extract filename from old photo URL: " + oldPhotoUrl);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to delete old profile photo: " + e.getMessage());
+                // Don't throw exception - photo deletion failure shouldn't break the update
+            }
+        }
     }
 
     public void addPhotoToGallery(Long userId, String photoUrl) {
@@ -517,5 +542,21 @@ if (Boolean.TRUE.equals(plan.getIsAddon())) {
             return str;
         }
         return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
+    private String extractFileNameFromUrl(String url) {
+        // Cloudflare R2 URL format: https://account.r2.cloudflarestorage.com/bucket/filename
+        // We need to extract "bucket/filename"
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String path = uri.getPath();
+            if (path.startsWith("/")) {
+                return path.substring(1);
+            }
+            return path;
+        } catch (Exception e) {
+            System.err.println("Failed to parse URL: " + url);
+            return null;
+        }
     }
 }

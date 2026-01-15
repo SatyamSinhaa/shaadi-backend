@@ -13,6 +13,7 @@ import com.shaadi.dto.SubscriptionResponseDto;
 import com.shaadi.entity.Favourite;
 import com.shaadi.entity.Subscription;
 import com.shaadi.entity.Block;
+import com.shaadi.service.CloudflareR2Service;
 
 import java.util.*;
 
@@ -21,9 +22,11 @@ import java.util.*;
 @CrossOrigin
 public class UserController {
     private final UserService userService;
+    private final CloudflareR2Service cloudflareR2Service;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, CloudflareR2Service cloudflareR2Service) {
         this.userService = userService;
+        this.cloudflareR2Service = cloudflareR2Service;
     }
 
     @GetMapping("/{userId}/subscription")
@@ -258,6 +261,47 @@ public class UserController {
             return ResponseEntity.ok(userService.getBlockedUsers(blockerId));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(List.of());
+        }
+    }
+
+    @PostMapping("/upload-url")
+    public ResponseEntity<?> getUploadUrl(@RequestBody com.shaadi.dto.UploadUrlRequest request) {
+        try {
+            System.out.println("Upload URL request received: " + request);
+            String fileName = request.getFileName();
+            String contentType = request.getContentType();
+
+            System.out.println("FileName: " + fileName + ", ContentType: " + contentType);
+
+            if (fileName == null || fileName.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "File name is required"));
+            }
+            if (contentType == null || contentType.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Content type is required"));
+            }
+
+            Map<String, String> urls = cloudflareR2Service.generateUploadUrl(fileName, contentType);
+            System.out.println("Generated URLs: " + urls);
+            return ResponseEntity.ok(urls);
+        } catch (Exception e) {
+            System.out.println("Error generating upload URL: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to generate upload URL: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/delete-file")
+    public ResponseEntity<?> deleteFile(@RequestBody Map<String, String> request) {
+        try {
+            String fileName = request.get("fileName");
+            if (fileName == null || fileName.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "File name is required"));
+            }
+
+            cloudflareR2Service.deleteFile(fileName);
+            return ResponseEntity.ok(Map.of("message", "File deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete file: " + e.getMessage()));
         }
     }
 
